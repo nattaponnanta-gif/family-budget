@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>บันทึกรายรับ-รายจ่ายครอบครัว | Family Budget</title>
+    <meta name="description" content="แอปพลิเคชันบันทึกรายรับ-รายจ่ายครอบครัว พร้อมติดตามรายการผ่อนชำระและซิงค์ข้อมูลผ่าน Firebase" />
+    <meta property="og:title" content="บันทึกรายรับ-รายจ่ายครอบครัว | Family Budget" />
+    <meta property="og:description" content="แอปพลิเคชันบันทึกรายรับ-รายจ่ายครอบครัว พร้อมติดตามรายการผ่อนชำระและซิงค์ข้อมูลผ่าน Firebase" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
     
     <!-- Google Fonts: Prompt -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1020,14 +1025,24 @@
     <!-- ==================== FIREBASE & APP LOGIC ==================== -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- 1. FIREBASE INITIALIZATION (MANDATORY CONFIG) ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'family-budget-th-default';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'family-budget-app-1b50a';
+        const defaultFirebaseConfig = {
+            apiKey: "AIzaSyB5QW6obWZV1-NOUIGl2rfTyhoBn92s4_A",
+            authDomain: "family-budget-app-1b50a.firebaseapp.com",
+            projectId: "family-budget-app-1b50a",
+            storageBucket: "family-budget-app-1b50a.firebasestorage.app",
+            messagingSenderId: "869022184009",
+            appId: "1:869022184009:web:cf5b25ea9be1b1aea84598",
+            measurementId: "G-33ZT76TFC2"
+        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : defaultFirebaseConfig;
         
-        let app, auth, db, currentUserAuth = null;
+        let app, analytics, auth, db, currentUserAuth = null;
 
         // --- 2. APPLICATION STATE ---
         const RECORDERS = {
@@ -1133,16 +1148,25 @@
 
                 if (firebaseConfig) {
                     app = initializeApp(firebaseConfig);
+                    if (firebaseConfig.measurementId) {
+                        isSupported().then((supported) => {
+                            if (supported) analytics = getAnalytics(app);
+                        }).catch(() => {});
+                    }
                     auth = getAuth(app);
                     db = getFirestore(app);
 
                     // Auth Rule 3: Sign in BEFORE any Firestore queries
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        const cred = await signInWithCustomToken(auth, __initial_auth_token);
-                        currentUserAuth = cred.user;
-                    } else {
-                        const cred = await signInAnonymously(auth);
-                        currentUserAuth = cred.user;
+                    try {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            const cred = await signInWithCustomToken(auth, __initial_auth_token);
+                            currentUserAuth = cred.user;
+                        } else {
+                            const cred = await signInAnonymously(auth);
+                            currentUserAuth = cred.user;
+                        }
+                    } catch (authErr) {
+                        console.warn("Firebase Auth sign-in skipped or failed:", authErr);
                     }
 
                     await ensureDefaultSeedData();
@@ -1156,7 +1180,9 @@
             } catch (err) {
                 console.error("Bootstrap Error:", err);
                 showToast("เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล", "error");
-                hideLoading();
+                if (state.members.length === 0) state.members = [...DEFAULT_MEMBERS];
+                if (state.categories.length === 0) state.categories = [...DEFAULT_CATEGORIES];
+                finishInitialLoad();
             }
         }
 
@@ -1170,26 +1196,41 @@
 
         // Seed default members and categories if empty
         async function ensureDefaultSeedData() {
-            if (!currentUserAuth) return;
-            
-            const memSnap = await getDocs(getFamilyCol('family_members'));
-            if (memSnap.empty) {
-                for (const m of DEFAULT_MEMBERS) {
-                    await setDoc(getFamilyDoc('family_members', m.id), m);
+            if (!db) return;
+            try {
+                const memSnap = await getDocs(getFamilyCol('family_members'));
+                if (memSnap.empty) {
+                    for (const m of DEFAULT_MEMBERS) {
+                        await setDoc(getFamilyDoc('family_members', m.id), m);
+                    }
                 }
-            }
 
-            const catSnap = await getDocs(getFamilyCol('family_categories'));
-            if (catSnap.empty) {
-                for (const c of DEFAULT_CATEGORIES) {
-                    await setDoc(getFamilyDoc('family_categories', c.id), c);
+                const catSnap = await getDocs(getFamilyCol('family_categories'));
+                if (catSnap.empty) {
+                    for (const c of DEFAULT_CATEGORIES) {
+                        await setDoc(getFamilyDoc('family_categories', c.id), c);
+                    }
                 }
+            } catch (err) {
+                console.error("Seed data error:", err);
             }
         }
 
         let initialSnapshotsCount = 0;
+        let snapshotErrorShown = false;
+        function handleSnapshotError(label, err) {
+            console.error(`${label} snapshot error:`, err);
+            if (!snapshotErrorShown) {
+                snapshotErrorShown = true;
+                showToast("ไม่สามารถเข้าถึง Firestore ได้ กรุณาตรวจสอบ Security Rules หรือ Anonymous Auth", "error");
+            }
+            if (state.members.length === 0) state.members = [...DEFAULT_MEMBERS];
+            if (state.categories.length === 0) state.categories = [...DEFAULT_CATEGORIES];
+            checkInitialDone();
+        }
+
         function setupRealtimeListeners() {
-            if (!currentUserAuth) return;
+            if (!db) return;
 
             // 1. Members Listener
             onSnapshot(getFamilyCol('family_members'), (snap) => {
@@ -1202,7 +1243,7 @@
                 }
                 refreshAllViews();
                 checkInitialDone();
-            }, (err) => console.error("Members snapshot error:", err));
+            }, (err) => handleSnapshotError("Members", err));
 
             // 2. Categories Listener
             onSnapshot(getFamilyCol('family_categories'), (snap) => {
@@ -1211,7 +1252,7 @@
                 state.categories = list;
                 refreshAllViews();
                 checkInitialDone();
-            }, (err) => console.error("Categories snapshot error:", err));
+            }, (err) => handleSnapshotError("Categories", err));
 
             // 3. Transactions Listener
             onSnapshot(getFamilyCol('family_transactions'), (snap) => {
@@ -1226,7 +1267,7 @@
                 populateMonthFilterOptions();
                 refreshAllViews();
                 checkInitialDone();
-            }, (err) => console.error("Transactions snapshot error:", err));
+            }, (err) => handleSnapshotError("Transactions", err));
 
             // 4. Installments Listener
             onSnapshot(getFamilyCol('family_installments'), (snap) => {
@@ -1236,7 +1277,7 @@
                 state.installments = list;
                 refreshAllViews();
                 checkInitialDone();
-            }, (err) => console.error("Installments snapshot error:", err));
+            }, (err) => handleSnapshotError("Installments", err));
         }
 
         function checkInitialDone() {
