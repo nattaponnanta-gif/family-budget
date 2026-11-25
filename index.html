@@ -280,9 +280,29 @@
                     </div>
                 </div>
 
-                <!-- Member Filter Pills -->
-                <div id="homeMemberPills" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                    <!-- Populated dynamically -->
+                <!-- Wallet Overview Cards (กระเป๋าเงินพ่อ / แม่ / กองกลาง) -->
+                <div class="space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                            <i class="ph-fill ph-wallet text-mint-500 text-base"></i> กระเป๋าเงินครอบครัว (แตะเพื่อดูเฉพาะกระเป๋า)
+                        </h3>
+                        <button onclick="openTransferShortcut()" class="px-3 py-1.5 rounded-xl bg-pastelBlue-50 hover:bg-pastelBlue-100 text-pastelBlue-500 text-xs font-semibold flex items-center gap-1 transition">
+                            <i class="ph-bold ph-arrows-left-right"></i> โอนระหว่างกระเป๋า
+                        </button>
+                    </div>
+                    <div id="homeWalletCards" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Wallet & Member Filter Pills -->
+                <div class="space-y-2">
+                    <div id="homeWalletPills" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
+                        <!-- Populated dynamically -->
+                    </div>
+                    <div id="homeMemberPills" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                        <!-- Populated dynamically -->
+                    </div>
                 </div>
 
                 <!-- Summary Cards Section -->
@@ -291,8 +311,8 @@
                     <div class="bg-gradient-to-br from-mint-500 to-mint-600 rounded-3xl p-6 text-white soft-shadow relative overflow-hidden">
                         <div class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
                         <div class="flex items-center justify-between mb-1">
-                            <span class="text-mint-100 text-sm font-medium">ยอดคงเหลือสุทธิ</span>
-                            <span id="homeFilterBadge" class="text-xs bg-white/20 px-2.5 py-1 rounded-full">ทั้งครอบครัว</span>
+                            <span id="homeBalanceTitle" class="text-mint-100 text-sm font-medium">ยอดคงเหลือสุทธิ (ตามช่วงที่เลือก)</span>
+                            <span id="homeFilterBadge" class="text-xs bg-white/20 px-2.5 py-1 rounded-full">ทุกกระเป๋า • ทั้งครอบครัว</span>
                         </div>
                         <div id="homeTotalBalance" class="text-3xl sm:text-4xl font-bold tracking-tight">฿0</div>
                     </div>
@@ -380,12 +400,15 @@
                         </div>
                         
                         <!-- Type Toggle Pills -->
-                        <div class="bg-slate-100 p-1 rounded-2xl flex items-center">
-                            <button type="button" id="btnTypeExpense" onclick="setTxType('expense')" class="px-4 py-1.5 rounded-xl text-sm font-semibold transition bg-coral-500 text-white shadow-xs">
+                        <div class="bg-slate-100 p-1 rounded-2xl flex items-center gap-0.5">
+                            <button type="button" id="btnTypeExpense" onclick="setTxType('expense')" class="px-3 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition bg-coral-500 text-white shadow-xs">
                                 รายจ่าย
                             </button>
-                            <button type="button" id="btnTypeIncome" onclick="setTxType('income')" class="px-4 py-1.5 rounded-xl text-sm font-semibold transition text-slate-500 hover:text-slate-700">
+                            <button type="button" id="btnTypeIncome" onclick="setTxType('income')" class="px-3 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition text-slate-500 hover:text-slate-700">
                                 รายรับ
+                            </button>
+                            <button type="button" id="btnTypeTransfer" onclick="setTxType('transfer')" class="px-3 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition text-slate-500 hover:text-slate-700">
+                                โอนย้าย
                             </button>
                         </div>
                     </div>
@@ -393,8 +416,34 @@
                     <form id="transactionForm" class="space-y-5">
                         <input type="hidden" id="editTxId" value="">
 
-                        <!-- 1. Select Member -->
-                        <div>
+                        <!-- 1A. Select Wallet (For Expense / Income) -->
+                        <div id="txWalletSection">
+                            <label class="block text-xs font-medium text-slate-500 mb-2">ใช้กระเป๋าเงินไหน? (เลือกกระเป๋า)</label>
+                            <div id="txWalletSelector" class="grid grid-cols-3 gap-2">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- 1B. Transfer Between Wallets (For Transfer) -->
+                        <div id="txTransferSection" class="hidden bg-pastelBlue-50/70 rounded-2xl p-3.5 border border-pastelBlue-100 space-y-2.5">
+                            <label class="block text-xs font-semibold text-pastelBlue-500">โอนเงินระหว่างกระเป๋า</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-2">
+                                <div>
+                                    <span class="text-[11px] text-slate-400 block mb-1">จากกระเป๋า</span>
+                                    <select id="txFromWallet" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-pastelBlue-500"></select>
+                                </div>
+                                <button type="button" onclick="swapTransferWallets()" title="สลับกระเป๋า" class="w-8 h-8 rounded-full bg-white border border-pastelBlue-200 text-pastelBlue-500 flex items-center justify-center mx-auto sm:mt-4 hover:bg-pastelBlue-100 transition">
+                                    <i class="ph-bold ph-arrows-left-right"></i>
+                                </button>
+                                <div>
+                                    <span class="text-[11px] text-slate-400 block mb-1">เข้ากระเป๋า</span>
+                                    <select id="txToWallet" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-pastelBlue-500"></select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 1C. Select Member -->
+                        <div id="txMemberSection">
                             <label class="block text-xs font-medium text-slate-500 mb-2">รายการนี้ของใคร? (เลือกสมาชิก)</label>
                             <div id="txMemberSelector" class="flex items-center gap-3 overflow-x-auto no-scrollbar py-1">
                                 <!-- Populated dynamically -->
@@ -438,7 +487,7 @@
                         </div>
 
                         <!-- 3. Category & Sub-category Selection -->
-                        <div>
+                        <div id="txCategorySection">
                             <label class="block text-xs font-medium text-slate-500 mb-1.5">หมวดหมู่หลัก</label>
                             <div class="relative mb-2.5">
                                 <select id="txMainCategory" onchange="renderTxSubCategories()" class="w-full appearance-none bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium text-slate-800 focus:outline-none focus:border-mint-500">
@@ -540,8 +589,14 @@
                         </div>
                     </div>
 
-                    <!-- Member Filter Dropdown & Search -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                    <!-- Wallet Filter, Member Filter Dropdown & Search -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                        <select id="reportWalletFilter" onchange="renderReports()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-700">
+                            <option value="ALL">กระเป๋า: ทั้งหมด</option>
+                            <option value="wallet_dad">👨 กระเป๋าเงินพ่อ</option>
+                            <option value="wallet_mom">👩 กระเป๋าเงินแม่</option>
+                            <option value="wallet_shared">🏠 กระเป๋าเงินกองกลาง</option>
+                        </select>
                         <select id="reportMemberFilter" onchange="renderReports()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-700">
                             <!-- Populated dynamically -->
                         </select>
@@ -896,13 +951,23 @@
                 </div>
 
                 <!-- Auto-record into Daily Expenses Checkbox -->
-                <label class="flex items-start gap-3 p-3.5 rounded-2xl bg-mint-50/70 border border-mint-200 cursor-pointer">
-                    <input type="checkbox" id="payInstAutoExpenseCheck" checked class="mt-0.5 w-4 h-4 accent-mint-500 rounded">
+                <div class="p-3.5 rounded-2xl bg-mint-50/70 border border-mint-200 space-y-2.5">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" id="payInstAutoExpenseCheck" checked class="mt-0.5 w-4 h-4 accent-mint-500 rounded">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-800">บันทึกลงรายจ่ายประจำวันอัตโนมัติ</p>
+                            <p class="text-[11px] text-slate-500 mt-0.5">เพิ่มรายการจ่ายนี้ลงในหน้าหลักของครอบครัวทันที เพื่อให้ยอดคงเหลือตรงกัน</p>
+                        </div>
+                    </label>
                     <div>
-                        <p class="text-xs font-semibold text-slate-800">บันทึกลงรายจ่ายประจำวันอัตโนมัติ</p>
-                        <p class="text-[11px] text-slate-500 mt-0.5">เพิ่มรายการจ่ายนี้ลงในหน้าหลักของครอบครัวทันที เพื่อให้ยอดคงเหลือรายเดือนตรงกัน</p>
+                        <label class="block text-[11px] font-medium text-slate-600 mb-1">หักจากกระเป๋าเงิน:</label>
+                        <select id="payInstWalletSelect" class="w-full bg-white border border-mint-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700">
+                            <option value="wallet_shared">🏠 กระเป๋าเงินกองกลาง</option>
+                            <option value="wallet_dad">👨 กระเป๋าเงินพ่อ</option>
+                            <option value="wallet_mom">👩 กระเป๋าเงินแม่</option>
+                        </select>
                     </div>
-                </label>
+                </div>
 
                 <div class="flex gap-2.5 pt-1">
                     <button type="button" onclick="closePayInstallmentModal()" class="flex-1 py-3 rounded-2xl bg-slate-100 text-slate-600 text-sm font-medium">ยกเลิก</button>
@@ -1050,6 +1115,12 @@
             'd2n': { pass: '0501', name: 'แม่', initial: 'ม', colorClass: 'bg-pastelPink-100 text-pastelPink-500' }
         };
 
+        const WALLETS = [
+            { id: 'wallet_dad', name: 'กระเป๋าเงินพ่อ', shortName: 'กระเป๋าพ่อ', icon: '👨', iconClass: 'ph-wallet', bg: '#E0EFFF', text: '#3B82F6', borderClass: 'border-pastelBlue-100' },
+            { id: 'wallet_mom', name: 'กระเป๋าเงินแม่', shortName: 'กระเป๋าแม่', icon: '👩', iconClass: 'ph-handbag', bg: '#FFE2EE', text: '#EC4899', borderClass: 'border-pastelPink-100' },
+            { id: 'wallet_shared', name: 'กระเป๋าเงินกองกลาง', shortName: 'กองกลาง', icon: '🏠', iconClass: 'ph-vault', bg: '#E1F7ED', text: '#10B981', borderClass: 'border-mint-100' }
+        ];
+
         let state = {
             recorder: null, // { username: 'n2d', name: 'พ่อ' }
             members: [],
@@ -1060,10 +1131,12 @@
             // UI Filters
             homeMonth: getCurrentYearMonth(),
             homeMemberFilter: 'ALL',
+            homeWalletFilter: 'ALL',
             instMemberFilter: 'ALL',
             
             // Add/Edit Form State
             txType: 'expense',
+            selectedWalletId: 'wallet_dad',
             selectedMemberId: null,
             selectedSubCategory: '',
             
@@ -1345,9 +1418,11 @@
             avatarEl.className = `w-9 h-9 rounded-xl flex items-center justify-center font-bold ${rec.colorClass}`;
             document.getElementById('settingsRecorderName').textContent = `${rec.name} (${state.recorder.username})`;
 
-            // Set Default Date in Form
+            // Set Default Date & Wallet in Form
             document.getElementById('txDate').value = getTodayISO();
+            state.selectedWalletId = state.recorder.username === 'd2n' ? 'wallet_mom' : 'wallet_dad';
             populateMonthFilterOptions();
+            populateTransferWalletSelects();
             refreshAllViews();
         }
 
@@ -1400,6 +1475,7 @@
             if (!state.recorder) return;
             renderHomeDashboard();
             renderInstallmentsDashboard();
+            renderTxWalletSelector();
             renderTxMemberSelector();
             renderTxMainCategories();
             renderCategoriesManage();
@@ -1435,12 +1511,138 @@
             renderHomeDashboard();
         });
 
+        // Resolve walletId for both new and legacy transactions
+        function resolveTxWalletId(tx) {
+            if (tx.walletId && WALLETS.some(w => w.id === tx.walletId)) return tx.walletId;
+            if (tx.memberId === 'mem_dad') return 'wallet_dad';
+            if (tx.memberId === 'mem_mom') return 'wallet_mom';
+            return 'wallet_shared';
+        }
+
+        function getWalletObj(walletId) {
+            return WALLETS.find(w => w.id === walletId) || WALLETS[2];
+        }
+
+        function txMatchesWalletFilter(tx, walletFilter) {
+            if (walletFilter === 'ALL') return true;
+            if (tx.type === 'transfer') {
+                return tx.fromWalletId === walletFilter || tx.toWalletId === walletFilter;
+            }
+            return resolveTxWalletId(tx) === walletFilter;
+        }
+
+        function computeAllTimeWalletStats() {
+            const stats = {};
+            WALLETS.forEach(w => {
+                stats[w.id] = { balance: 0, totalIn: 0, totalOut: 0 };
+            });
+
+            state.transactions.forEach(tx => {
+                const amt = Number(tx.amount) || 0;
+                if (tx.type === 'transfer') {
+                    if (stats[tx.fromWalletId]) {
+                        stats[tx.fromWalletId].balance -= amt;
+                        stats[tx.fromWalletId].totalOut += amt;
+                    }
+                    if (stats[tx.toWalletId]) {
+                        stats[tx.toWalletId].balance += amt;
+                        stats[tx.toWalletId].totalIn += amt;
+                    }
+                } else {
+                    const wid = resolveTxWalletId(tx);
+                    if (stats[wid]) {
+                        if (tx.type === 'income') {
+                            stats[wid].balance += amt;
+                            stats[wid].totalIn += amt;
+                        } else {
+                            stats[wid].balance -= amt;
+                            stats[wid].totalOut += amt;
+                        }
+                    }
+                }
+            });
+            return stats;
+        }
+
         function renderHomeDashboard() {
-            // 1. Render Member Filter Pills
+            // 0. Filter Transactions by Month first (used for wallet period stats & member breakdown)
+            const monthFilteredTx = state.transactions.filter(tx => {
+                if (state.homeMonth === 'ALL') return true;
+                return tx.date && tx.date.startsWith(state.homeMonth);
+            });
+
+            // 0B. Render 3 Wallet Overview Cards (Dad, Mom, Shared)
+            const allTimeWallets = computeAllTimeWalletStats();
+            const periodWalletIn = { wallet_dad: 0, wallet_mom: 0, wallet_shared: 0 };
+            const periodWalletOut = { wallet_dad: 0, wallet_mom: 0, wallet_shared: 0 };
+
+            monthFilteredTx.forEach(tx => {
+                const amt = Number(tx.amount) || 0;
+                if (tx.type === 'transfer') {
+                    if (periodWalletOut[tx.fromWalletId] !== undefined) periodWalletOut[tx.fromWalletId] += amt;
+                    if (periodWalletIn[tx.toWalletId] !== undefined) periodWalletIn[tx.toWalletId] += amt;
+                } else {
+                    const wid = resolveTxWalletId(tx);
+                    if (tx.type === 'income') periodWalletIn[wid] += amt;
+                    else periodWalletOut[wid] += amt;
+                }
+            });
+
+            const walletCardsEl = document.getElementById('homeWalletCards');
+            if (walletCardsEl) {
+                walletCardsEl.innerHTML = WALLETS.map(w => {
+                    const isActive = state.homeWalletFilter === w.id;
+                    const bal = allTimeWallets[w.id]?.balance || 0;
+                    const pIn = periodWalletIn[w.id] || 0;
+                    const pOut = periodWalletOut[w.id] || 0;
+                    return `
+                        <button type="button" onclick="toggleHomeWalletCard('${w.id}')" class="card-hover text-left bg-white rounded-3xl p-4 soft-shadow border-2 transition ${isActive ? 'border-mint-500 ring-2 ring-mint-100' : `${w.borderClass} hover:border-slate-200`}">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="w-9 h-9 rounded-2xl flex items-center justify-center text-lg shrink-0" style="background-color: ${w.bg}; color: ${w.text};">
+                                        ${w.icon}
+                                    </span>
+                                    <div class="min-w-0">
+                                        <p class="font-bold text-xs sm:text-sm text-slate-800 truncate">${w.name}</p>
+                                        <p class="text-[10px] text-slate-400">ยอดคงเหลือสะสม</p>
+                                    </div>
+                                </div>
+                                ${isActive ? `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-mint-100 text-mint-600 shrink-0">กำลังดู</span>` : ''}
+                            </div>
+                            <p class="text-lg sm:text-xl font-bold ${bal < 0 ? 'text-coral-500' : 'text-slate-800'}">${formatCurrency(bal)}</p>
+                            <div class="flex items-center justify-between text-[10px] mt-1.5 pt-1.5 border-t border-slate-50">
+                                <span class="text-mint-600">รับ +${formatCurrency(pIn)}</span>
+                                <span class="text-coral-500">จ่าย -${formatCurrency(pOut)}</span>
+                            </div>
+                        </button>
+                    `;
+                }).join('');
+            }
+
+            // 1A. Render Wallet Filter Pills
+            const walletPillsEl = document.getElementById('homeWalletPills');
+            if (walletPillsEl) {
+                let wpHtml = `
+                    <button onclick="setHomeWalletFilter('ALL')" class="px-3.5 py-1.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${state.homeWalletFilter === 'ALL' ? 'bg-slate-800 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-100'}">
+                        <span>💳</span> ทุกกระเป๋า
+                    </button>
+                `;
+                WALLETS.forEach(w => {
+                    const active = state.homeWalletFilter === w.id;
+                    wpHtml += `
+                        <button onclick="setHomeWalletFilter('${w.id}')" class="px-3.5 py-1.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${active ? 'bg-pastelBlue-500 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-100'}">
+                            <span>${w.icon}</span> ${w.name}
+                        </button>
+                    `;
+                });
+                walletPillsEl.innerHTML = wpHtml;
+            }
+
+            // 1B. Render Member Filter Pills
             const pillsContainer = document.getElementById('homeMemberPills');
             let pillsHtml = `
                 <button onclick="setHomeMemberFilter('ALL')" class="px-4 py-2 rounded-2xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${state.homeMemberFilter === 'ALL' ? 'bg-slate-800 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-100'}">
-                    <span>👨‍👩‍👧‍👦</span> ทั้งหมด
+                    <span>👨‍👩‍👧‍👦</span> สมาชิกทั้งหมด
                 </button>
             `;
             state.members.forEach(m => {
@@ -1454,27 +1656,34 @@
             pillsContainer.innerHTML = pillsHtml;
 
             // Update Badge
+            const activeWalletObj = state.homeWalletFilter === 'ALL' ? null : getWalletObj(state.homeWalletFilter);
             const activeMemberObj = state.members.find(m => m.id === state.homeMemberFilter);
-            document.getElementById('homeFilterBadge').textContent = activeMemberObj ? `เฉพาะ: ${activeMemberObj.name}` : 'ทั้งครอบครัว';
+            const walletLabel = activeWalletObj ? activeWalletObj.name : 'ทุกกระเป๋า';
+            const memberLabel = activeMemberObj ? activeMemberObj.name : 'ทั้งครอบครัว';
+            document.getElementById('homeFilterBadge').textContent = `${walletLabel} • ${memberLabel}`;
 
-            // 2. Filter Transactions by Month (for member breakdown) & by Member (for summary cards)
-            const monthFilteredTx = state.transactions.filter(tx => {
-                if (state.homeMonth === 'ALL') return true;
-                return tx.date && tx.date.startsWith(state.homeMonth);
-            });
-
-            const fullyFilteredTx = monthFilteredTx.filter(tx => {
+            // 2. Filter Transactions by Wallet & Member
+            const walletFilteredMonthTx = monthFilteredTx.filter(tx => txMatchesWalletFilter(tx, state.homeWalletFilter));
+            const fullyFilteredTx = walletFilteredMonthTx.filter(tx => {
                 if (state.homeMemberFilter === 'ALL') return true;
+                if (tx.type === 'transfer') return state.homeWalletFilter !== 'ALL';
                 return tx.memberId === state.homeMemberFilter;
             });
 
-            // 3. Calculate Totals
+            // 3. Calculate Totals for Summary Cards
             let totalIncome = 0;
             let totalExpense = 0;
             fullyFilteredTx.forEach(tx => {
                 const amt = Number(tx.amount) || 0;
-                if (tx.type === 'income') totalIncome += amt;
-                else totalExpense += amt;
+                if (tx.type === 'transfer') {
+                    if (state.homeWalletFilter !== 'ALL') {
+                        if (tx.toWalletId === state.homeWalletFilter) totalIncome += amt;
+                        if (tx.fromWalletId === state.homeWalletFilter) totalExpense += amt;
+                    }
+                } else {
+                    if (tx.type === 'income') totalIncome += amt;
+                    else totalExpense += amt;
+                }
             });
             const balance = totalIncome - totalExpense;
 
@@ -1482,12 +1691,12 @@
             document.getElementById('homeTotalIncome').textContent = formatCurrency(totalIncome);
             document.getElementById('homeTotalExpense').textContent = formatCurrency(totalExpense);
 
-            // 4. Family Members Spending Breakdown (based on monthFilteredTx)
+            // 4. Family Members Spending Breakdown (based on walletFilteredMonthTx expenses)
             let familyTotalExpense = 0;
             const memberSpendMap = {};
             state.members.forEach(m => memberSpendMap[m.id] = 0);
 
-            monthFilteredTx.forEach(tx => {
+            walletFilteredMonthTx.forEach(tx => {
                 if (tx.type === 'expense') {
                     const amt = Number(tx.amount) || 0;
                     familyTotalExpense += amt;
@@ -1523,8 +1732,10 @@
                 }).join('');
             }
 
-            // 5. Category Overview Donut Chart (based on fullyFilteredTx expenses)
-            renderHomeDonutChart(fullyFilteredTx, totalExpense);
+            // 5. Category Overview Donut Chart (based on real expense transactions)
+            const pureExpenses = fullyFilteredTx.filter(tx => tx.type === 'expense');
+            const pureExpenseSum = pureExpenses.reduce((acc, tx) => acc + (Number(tx.amount) || 0), 0);
+            renderHomeDonutChart(pureExpenses, pureExpenseSum);
 
             // 6. Recent Transactions (top 8)
             const recentEl = document.getElementById('recentTransactionsList');
@@ -1547,6 +1758,22 @@
         window.setHomeMemberFilter = function(memberId) {
             state.homeMemberFilter = memberId;
             renderHomeDashboard();
+        };
+
+        window.setHomeWalletFilter = function(walletId) {
+            state.homeWalletFilter = walletId;
+            renderHomeDashboard();
+        };
+
+        window.toggleHomeWalletCard = function(walletId) {
+            state.homeWalletFilter = (state.homeWalletFilter === walletId) ? 'ALL' : walletId;
+            renderHomeDashboard();
+        };
+
+        window.openTransferShortcut = function() {
+            resetTransactionForm();
+            setTxType('transfer');
+            switchTab('add');
         };
 
         function renderHomeDonutChart(txList, totalExpense) {
@@ -1631,7 +1858,41 @@
         }
 
         function buildTransactionRowHTML(tx) {
+            if (tx.type === 'transfer') {
+                const fromW = getWalletObj(tx.fromWalletId);
+                const toW = getWalletObj(tx.toWalletId);
+                return `
+                    <div onclick="openEditTransaction('${tx.id}')" class="card-hover cursor-pointer flex items-center justify-between p-3 rounded-2xl bg-pastelBlue-50/60 hover:bg-pastelBlue-100/60 border border-pastelBlue-100 transition">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 bg-pastelBlue-100 text-pastelBlue-500">
+                                <i class="ph-bold ph-arrows-left-right"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="font-semibold text-sm text-slate-800 truncate">โอนระหว่างกระเป๋า</p>
+                                <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500 mt-0.5">
+                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-medium" style="background-color: ${fromW.bg}; color: ${fromW.text};">
+                                        ${fromW.icon} ${fromW.shortName}
+                                    </span>
+                                    <span>→</span>
+                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-medium" style="background-color: ${toW.bg}; color: ${toW.text};">
+                                        ${toW.icon} ${toW.shortName}
+                                    </span>
+                                    <span class="text-slate-400">• ${formatThaiDateShort(tx.date)}</span>
+                                    <span class="text-slate-400">• โดย ${escapeHtml(tx.recordedBy || '-')}</span>
+                                </div>
+                                ${tx.note ? `<p class="text-[11px] text-slate-500 truncate mt-0.5">"${escapeHtml(tx.note)}"</p>` : ''}
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0 ml-2">
+                            <p class="font-bold text-sm sm:text-base text-pastelBlue-500">${formatCurrency(tx.amount)}</p>
+                            <span class="text-[10px] text-slate-400 inline-flex items-center gap-0.5"><i class="ph ph-pencil-simple"></i> แก้ไข</span>
+                        </div>
+                    </div>
+                `;
+            }
+
             const member = state.members.find(m => m.id === tx.memberId) || { name: 'ไม่ระบุ', icon: '👤', bg: '#F1F5F9', text: '#64748B' };
+            const wallet = getWalletObj(resolveTxWalletId(tx));
             const cat = state.categories.find(c => c.id === tx.mainCategoryId);
             const iconClass = cat ? cat.icon : (tx.type === 'income' ? 'ph-wallet' : 'ph-receipt');
             const isIncome = tx.type === 'income';
@@ -1647,7 +1908,10 @@
                             <div class="flex items-center gap-1.5">
                                 <p class="font-semibold text-sm text-slate-800 truncate">${escapeHtml(titleText)}</p>
                             </div>
-                            <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-400 mt-0.5">
+                            <div class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-slate-400 mt-0.5">
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-medium" style="background-color: ${wallet.bg}; color: ${wallet.text};">
+                                    ${wallet.icon} ${wallet.shortName}
+                                </span>
                                 <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-medium" style="background-color: ${member.bg}; color: ${member.text};">
                                     ${member.icon} ${escapeHtml(member.name)}
                                 </span>
@@ -1668,24 +1932,91 @@
         }
 
         // --- 7. FAST TRANSACTION ENTRY & EDITING ---
+        function populateTransferWalletSelects() {
+            const fromSel = document.getElementById('txFromWallet');
+            const toSel = document.getElementById('txToWallet');
+            if (!fromSel || !toSel) return;
+            const optsHtml = WALLETS.map(w => `<option value="${w.id}">${w.icon} ${w.name}</option>`).join('');
+            fromSel.innerHTML = optsHtml;
+            toSel.innerHTML = optsHtml;
+            fromSel.value = state.recorder?.username === 'd2n' ? 'wallet_mom' : 'wallet_dad';
+            toSel.value = 'wallet_shared';
+        }
+
+        window.swapTransferWallets = function() {
+            const fromSel = document.getElementById('txFromWallet');
+            const toSel = document.getElementById('txToWallet');
+            const tmp = fromSel.value;
+            fromSel.value = toSel.value;
+            toSel.value = tmp;
+        };
+
         window.setTxType = function(type) {
             state.txType = type;
             const btnExp = document.getElementById('btnTypeExpense');
             const btnInc = document.getElementById('btnTypeIncome');
+            const btnTrf = document.getElementById('btnTypeTransfer');
             const badge = document.getElementById('amountTypeBadge');
 
+            const walletSec = document.getElementById('txWalletSection');
+            const transferSec = document.getElementById('txTransferSection');
+            const memberSec = document.getElementById('txMemberSection');
+            const catSec = document.getElementById('txCategorySection');
+
+            const inactiveCls = "px-3 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition text-slate-500 hover:text-slate-700";
+            btnExp.className = inactiveCls;
+            btnInc.className = inactiveCls;
+            btnTrf.className = inactiveCls;
+
             if (type === 'expense') {
-                btnExp.className = "px-4 py-1.5 rounded-xl text-sm font-semibold transition bg-coral-500 text-white shadow-xs";
-                btnInc.className = "px-4 py-1.5 rounded-xl text-sm font-semibold transition text-slate-500 hover:text-slate-700";
+                btnExp.className = "px-3 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition bg-coral-500 text-white shadow-xs";
                 badge.textContent = "รายจ่าย";
                 badge.className = "text-xs font-medium text-coral-500";
-            } else {
-                btnInc.className = "px-4 py-1.5 rounded-xl text-sm font-semibold transition bg-mint-500 text-white shadow-xs";
-                btnExp.className = "px-4 py-1.5 rounded-xl text-sm font-semibold transition text-slate-500 hover:text-slate-700";
+                walletSec.classList.remove('hidden');
+                transferSec.classList.add('hidden');
+                memberSec.classList.remove('hidden');
+                catSec.classList.remove('hidden');
+                renderTxMainCategories();
+            } else if (type === 'income') {
+                btnInc.className = "px-3 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition bg-mint-500 text-white shadow-xs";
                 badge.textContent = "รายรับ";
                 badge.className = "text-xs font-medium text-mint-600";
+                walletSec.classList.remove('hidden');
+                transferSec.classList.add('hidden');
+                memberSec.classList.remove('hidden');
+                catSec.classList.remove('hidden');
+                renderTxMainCategories();
+            } else {
+                btnTrf.className = "px-3 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition bg-pastelBlue-500 text-white shadow-xs";
+                badge.textContent = "โอนระหว่างกระเป๋า";
+                badge.className = "text-xs font-medium text-pastelBlue-500";
+                walletSec.classList.add('hidden');
+                transferSec.classList.remove('hidden');
+                memberSec.classList.add('hidden');
+                catSec.classList.add('hidden');
             }
-            renderTxMainCategories();
+        };
+
+        function renderTxWalletSelector() {
+            const container = document.getElementById('txWalletSelector');
+            if (!container) return;
+            container.innerHTML = WALLETS.map(w => {
+                const isSelected = w.id === state.selectedWalletId;
+                return `
+                    <button type="button" onclick="selectTxWallet('${w.id}')" class="flex flex-col items-center p-2.5 rounded-2xl border-2 transition ${isSelected ? 'border-mint-500 bg-mint-50/50 scale-[1.02]' : 'border-slate-100 bg-slate-50 opacity-80 hover:opacity-100'}">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl mb-1 relative" style="background-color: ${w.bg}; color: ${w.text};">
+                            ${w.icon}
+                            ${isSelected ? `<span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-mint-500 text-white text-[9px] flex items-center justify-center border-2 border-white"><i class="ph-bold ph-check"></i></span>` : ''}
+                        </div>
+                        <span class="text-[11px] font-semibold text-center leading-tight ${isSelected ? 'text-mint-700' : 'text-slate-600'}">${w.name}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        window.selectTxWallet = function(walletId) {
+            state.selectedWalletId = walletId;
+            renderTxWalletSelector();
         };
 
         function renderTxMemberSelector() {
@@ -1812,29 +2143,51 @@
                 return;
             }
 
-            const mainCatId = document.getElementById('txMainCategory').value;
-            const mainCat = state.categories.find(c => c.id === mainCatId);
-            if (!mainCat) {
-                showToast("กรุณาเลือกหมวดหมู่", "error");
-                return;
-            }
-
             const dateVal = document.getElementById('txDate').value || getTodayISO();
             const noteVal = document.getElementById('txNote').value.trim();
             const editId = document.getElementById('editTxId').value;
 
-            const payload = {
-                type: state.txType,
-                memberId: state.selectedMemberId,
-                amount: rawAmount,
-                mainCategoryId: mainCat.id,
-                mainCategoryName: mainCat.name,
-                subCategory: state.selectedSubCategory || '',
-                date: dateVal,
-                note: noteVal,
-                recordedBy: state.recorder.name,
-                updatedAt: Date.now()
-            };
+            let payload;
+            if (state.txType === 'transfer') {
+                const fromWalletId = document.getElementById('txFromWallet').value;
+                const toWalletId = document.getElementById('txToWallet').value;
+                if (fromWalletId === toWalletId) {
+                    showToast("กรุณาเลือกกระเป๋าต้นทางและปลายทางที่ต่างกัน", "error");
+                    return;
+                }
+                payload = {
+                    type: 'transfer',
+                    fromWalletId,
+                    toWalletId,
+                    amount: rawAmount,
+                    mainCategoryName: 'โอนระหว่างกระเป๋า',
+                    subCategory: '',
+                    date: dateVal,
+                    note: noteVal,
+                    recordedBy: state.recorder.name,
+                    updatedAt: Date.now()
+                };
+            } else {
+                const mainCatId = document.getElementById('txMainCategory').value;
+                const mainCat = state.categories.find(c => c.id === mainCatId);
+                if (!mainCat) {
+                    showToast("กรุณาเลือกหมวดหมู่", "error");
+                    return;
+                }
+                payload = {
+                    type: state.txType,
+                    walletId: state.selectedWalletId || 'wallet_shared',
+                    memberId: state.selectedMemberId,
+                    amount: rawAmount,
+                    mainCategoryId: mainCat.id,
+                    mainCategoryName: mainCat.name,
+                    subCategory: state.selectedSubCategory || '',
+                    date: dateVal,
+                    note: noteVal,
+                    recordedBy: state.recorder.name,
+                    updatedAt: Date.now()
+                };
+            }
 
             try {
                 if (editId) {
@@ -1871,13 +2224,22 @@
             document.getElementById('deleteTxInEditBtn').classList.remove('hidden');
 
             setTxType(tx.type);
-            state.selectedMemberId = tx.memberId;
-            renderTxMemberSelector();
-
             document.getElementById('txAmountInput').value = formatNumberInput(String(tx.amount));
-            document.getElementById('txMainCategory').value = tx.mainCategoryId;
-            state.selectedSubCategory = tx.subCategory || '';
-            renderTxSubCategories();
+
+            if (tx.type === 'transfer') {
+                populateTransferWalletSelects();
+                document.getElementById('txFromWallet').value = tx.fromWalletId || 'wallet_dad';
+                document.getElementById('txToWallet').value = tx.toWalletId || 'wallet_shared';
+            } else {
+                state.selectedWalletId = resolveTxWalletId(tx);
+                renderTxWalletSelector();
+                state.selectedMemberId = tx.memberId;
+                renderTxMemberSelector();
+
+                document.getElementById('txMainCategory').value = tx.mainCategoryId;
+                state.selectedSubCategory = tx.subCategory || '';
+                renderTxSubCategories();
+            }
 
             document.getElementById('txDate').value = tx.date;
             document.getElementById('txNote').value = tx.note || '';
@@ -1892,6 +2254,9 @@
             document.getElementById('deleteTxInEditBtn').classList.add('hidden');
 
             setTxType('expense');
+            state.selectedWalletId = state.recorder?.username === 'd2n' ? 'wallet_mom' : 'wallet_dad';
+            renderTxWalletSelector();
+            populateTransferWalletSelects();
             document.getElementById('txAmountInput').value = '0';
             document.getElementById('txDate').value = getTodayISO();
             document.getElementById('txNote').value = '';
@@ -2253,13 +2618,23 @@
         };
 
         window.renderReports = function() {
+            const walletFilter = document.getElementById('reportWalletFilter')?.value || 'ALL';
             const memberFilter = document.getElementById('reportMemberFilter').value || 'ALL';
             const searchQuery = (document.getElementById('reportSearchInput').value || '').trim().toLowerCase();
             const todayStr = getTodayISO();
 
             const filtered = state.transactions.filter(tx => {
+                // Wallet filter
+                if (!txMatchesWalletFilter(tx, walletFilter)) return false;
+
                 // Member filter
-                if (memberFilter !== 'ALL' && tx.memberId !== memberFilter) return false;
+                if (memberFilter !== 'ALL') {
+                    if (tx.type === 'transfer') {
+                        if (walletFilter === 'ALL') return false;
+                    } else if (tx.memberId !== memberFilter) {
+                        return false;
+                    }
+                }
 
                 // Search filter
                 if (searchQuery) {
@@ -2293,8 +2668,15 @@
             let incSum = 0, expSum = 0;
             filtered.forEach(tx => {
                 const amt = Number(tx.amount) || 0;
-                if (tx.type === 'income') incSum += amt;
-                else expSum += amt;
+                if (tx.type === 'transfer') {
+                    if (walletFilter !== 'ALL') {
+                        if (tx.toWalletId === walletFilter) incSum += amt;
+                        if (tx.fromWalletId === walletFilter) expSum += amt;
+                    }
+                } else {
+                    if (tx.type === 'income') incSum += amt;
+                    else expSum += amt;
+                }
             });
 
             document.getElementById('reportIncomeSum').textContent = formatCurrency(incSum);
@@ -2925,6 +3307,7 @@
             const interestPaid = parseFloat(document.getElementById('payInstInterestPart').value) || 0;
             const payDate = document.getElementById('payInstDateInput').value || getTodayISO();
             const autoRecordExpense = document.getElementById('payInstAutoExpenseCheck').checked;
+            const payWalletId = document.getElementById('payInstWalletSelect')?.value || 'wallet_shared';
 
             if (payAmount <= 0) {
                 showToast("กรุณาระบุยอดชำระที่มากกว่า 0 บาท", "error");
@@ -2965,6 +3348,7 @@
                     const matchedCat = expenseCats.find(c => c.id === 'cat_exp_util') || expenseCats[0];
                     await addDoc(getFamilyCol('family_transactions'), {
                         type: 'expense',
+                        walletId: payWalletId,
                         memberId: activePayInstObj.memberId || (state.members[0]?.id || 'mem_dad'),
                         amount: payAmount,
                         mainCategoryId: matchedCat ? matchedCat.id : 'cat_exp_util',
