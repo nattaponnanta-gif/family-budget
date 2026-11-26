@@ -282,23 +282,26 @@
 
                 <!-- Wallet Overview Cards (กระเป๋าเงินพ่อ / แม่ / กองกลาง) -->
                 <div class="space-y-2.5">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between gap-2">
                         <h3 class="text-sm font-bold text-slate-700 flex items-center gap-1.5">
-                            <i class="ph-fill ph-wallet text-mint-500 text-base"></i> กระเป๋าเงินครอบครัว (แตะเพื่อดูเฉพาะกระเป๋า)
+                            <i class="ph-fill ph-wallet text-mint-500 text-base"></i> กระเป๋าเงินครอบครัวและรายการย่อย
                         </h3>
-                        <button onclick="openTransferShortcut()" class="px-3 py-1.5 rounded-xl bg-pastelBlue-50 hover:bg-pastelBlue-100 text-pastelBlue-500 text-xs font-semibold flex items-center gap-1 transition">
+                        <button onclick="openTransferShortcut()" class="px-3 py-1.5 rounded-xl bg-pastelBlue-50 hover:bg-pastelBlue-100 text-pastelBlue-500 text-xs font-semibold flex items-center gap-1 transition shrink-0">
                             <i class="ph-bold ph-arrows-left-right"></i> โอนระหว่างกระเป๋า
                         </button>
                     </div>
-                    <div id="homeWalletCards" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <div id="homeWalletCards" class="grid grid-cols-1 lg:grid-cols-3 gap-3">
                         <!-- Populated dynamically -->
                     </div>
                 </div>
 
-                <!-- Wallet & Member Filter Pills -->
+                <!-- Wallet, Sub-wallet & Member Filter Pills -->
                 <div class="space-y-2">
                     <div id="homeWalletPills" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
                         <!-- Populated dynamically -->
+                    </div>
+                    <div id="homeWalletSubPills" class="hidden flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
+                        <!-- Populated dynamically when a wallet is selected -->
                     </div>
                     <div id="homeMemberPills" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                         <!-- Populated dynamically -->
@@ -416,28 +419,43 @@
                     <form id="transactionForm" class="space-y-5">
                         <input type="hidden" id="editTxId" value="">
 
-                        <!-- 1A. Select Wallet (For Expense / Income) -->
-                        <div id="txWalletSection">
-                            <label class="block text-xs font-medium text-slate-500 mb-2">ใช้กระเป๋าเงินไหน? (เลือกกระเป๋า)</label>
-                            <div id="txWalletSelector" class="grid grid-cols-3 gap-2">
-                                <!-- Populated dynamically -->
+                        <!-- 1A. Select Wallet & Sub-item (For Expense / Income) -->
+                        <div id="txWalletSection" class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-2">ใช้กระเป๋าเงินไหน? (เลือกกระเป๋า)</label>
+                                <div id="txWalletSelector" class="grid grid-cols-3 gap-2">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                            <div id="txWalletSubSection">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="block text-xs font-medium text-slate-500">รายการย่อยในกระเป๋า</label>
+                                    <button type="button" onclick="openWalletSubManageModal(state.selectedWalletId)" class="text-[11px] font-semibold text-mint-600 hover:underline flex items-center gap-0.5">
+                                        <i class="ph-bold ph-plus"></i> จัดการรายการย่อย
+                                    </button>
+                                </div>
+                                <div id="txWalletSubSelector" class="flex flex-wrap gap-2">
+                                    <!-- Populated dynamically -->
+                                </div>
                             </div>
                         </div>
 
-                        <!-- 1B. Transfer Between Wallets (For Transfer) -->
+                        <!-- 1B. Transfer Between Wallets & Sub-items (For Transfer) -->
                         <div id="txTransferSection" class="hidden bg-pastelBlue-50/70 rounded-2xl p-3.5 border border-pastelBlue-100 space-y-2.5">
-                            <label class="block text-xs font-semibold text-pastelBlue-500">โอนเงินระหว่างกระเป๋า</label>
-                            <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-2">
-                                <div>
-                                    <span class="text-[11px] text-slate-400 block mb-1">จากกระเป๋า</span>
-                                    <select id="txFromWallet" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-pastelBlue-500"></select>
+                            <label class="block text-xs font-semibold text-pastelBlue-500">โอนเงินระหว่างกระเป๋า / รายการย่อย</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-start gap-2">
+                                <div class="space-y-1.5">
+                                    <span class="text-[11px] text-slate-400 block">จากกระเป๋า</span>
+                                    <select id="txFromWallet" onchange="populateTransferSubSelect('from')" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-pastelBlue-500"></select>
+                                    <select id="txFromWalletSub" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-600 focus:outline-none focus:border-pastelBlue-500"></select>
                                 </div>
-                                <button type="button" onclick="swapTransferWallets()" title="สลับกระเป๋า" class="w-8 h-8 rounded-full bg-white border border-pastelBlue-200 text-pastelBlue-500 flex items-center justify-center mx-auto sm:mt-4 hover:bg-pastelBlue-100 transition">
+                                <button type="button" onclick="swapTransferWallets()" title="สลับกระเป๋า" class="w-8 h-8 rounded-full bg-white border border-pastelBlue-200 text-pastelBlue-500 flex items-center justify-center mx-auto sm:mt-6 hover:bg-pastelBlue-100 transition">
                                     <i class="ph-bold ph-arrows-left-right"></i>
                                 </button>
-                                <div>
-                                    <span class="text-[11px] text-slate-400 block mb-1">เข้ากระเป๋า</span>
-                                    <select id="txToWallet" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-pastelBlue-500"></select>
+                                <div class="space-y-1.5">
+                                    <span class="text-[11px] text-slate-400 block">เข้ากระเป๋า</span>
+                                    <select id="txToWallet" onchange="populateTransferSubSelect('to')" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-pastelBlue-500"></select>
+                                    <select id="txToWalletSub" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-600 focus:outline-none focus:border-pastelBlue-500"></select>
                                 </div>
                             </div>
                         </div>
@@ -589,13 +607,16 @@
                         </div>
                     </div>
 
-                    <!-- Wallet Filter, Member Filter Dropdown & Search -->
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-                        <select id="reportWalletFilter" onchange="renderReports()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-700">
+                    <!-- Wallet Filter, Sub-wallet Filter, Member Filter Dropdown & Search -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-1">
+                        <select id="reportWalletFilter" onchange="onReportWalletFilterChange()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-700">
                             <option value="ALL">กระเป๋า: ทั้งหมด</option>
                             <option value="wallet_dad">👨 กระเป๋าเงินพ่อ</option>
                             <option value="wallet_mom">👩 กระเป๋าเงินแม่</option>
                             <option value="wallet_shared">🏠 กระเป๋าเงินกองกลาง</option>
+                        </select>
+                        <select id="reportWalletSubFilter" onchange="renderReports()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-700">
+                            <option value="ALL">รายการย่อย: ทั้งหมด</option>
                         </select>
                         <select id="reportMemberFilter" onchange="renderReports()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-700">
                             <!-- Populated dynamically -->
@@ -678,6 +699,17 @@
                     </div>
 
                     <div id="settingsMembersList" class="space-y-2.5">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Manage Wallet Sub-Items -->
+                <div class="bg-white rounded-3xl p-5 soft-shadow border border-slate-100">
+                    <div class="mb-4">
+                        <h3 class="font-bold text-slate-800 text-base">กระเป๋าเงินและรายการย่อย</h3>
+                        <p class="text-xs text-slate-400">เพิ่ม แก้ไข หรือลบรายการย่อย เช่น เงินสด เงินฝากธนาคาร เงินลงทุน ในแต่ละกระเป๋า</p>
+                    </div>
+                    <div id="settingsWalletsList" class="space-y-3">
                         <!-- Populated dynamically -->
                     </div>
                 </div>
@@ -959,13 +991,21 @@
                             <p class="text-[11px] text-slate-500 mt-0.5">เพิ่มรายการจ่ายนี้ลงในหน้าหลักของครอบครัวทันที เพื่อให้ยอดคงเหลือตรงกัน</p>
                         </div>
                     </label>
-                    <div>
-                        <label class="block text-[11px] font-medium text-slate-600 mb-1">หักจากกระเป๋าเงิน:</label>
-                        <select id="payInstWalletSelect" class="w-full bg-white border border-mint-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700">
-                            <option value="wallet_shared">🏠 กระเป๋าเงินกองกลาง</option>
-                            <option value="wallet_dad">👨 กระเป๋าเงินพ่อ</option>
-                            <option value="wallet_mom">👩 กระเป๋าเงินแม่</option>
-                        </select>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-600 mb-1">หักจากกระเป๋าเงิน:</label>
+                            <select id="payInstWalletSelect" onchange="renderPayInstSubOptions()" class="w-full bg-white border border-mint-200 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-700">
+                                <option value="wallet_shared">🏠 กระเป๋าเงินกองกลาง</option>
+                                <option value="wallet_dad">👨 กระเป๋าเงินพ่อ</option>
+                                <option value="wallet_mom">👩 กระเป๋าเงินแม่</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-600 mb-1">รายการย่อย:</label>
+                            <select id="payInstWalletSubSelect" class="w-full bg-white border border-mint-200 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-700">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -1087,6 +1127,56 @@
         </div>
     </div>
 
+    <!-- ==================== MODAL: MANAGE WALLET SUB-ITEMS ==================== -->
+    <div id="walletSubManageModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 hidden items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 soft-shadow my-auto max-h-[90vh] overflow-y-auto space-y-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div id="walletSubModalIcon" class="w-10 h-10 rounded-2xl flex items-center justify-center text-xl bg-mint-100 text-mint-600">
+                        💳
+                    </div>
+                    <div>
+                        <h3 id="walletSubModalTitle" class="text-base font-bold text-slate-800">จัดการรายการย่อย</h3>
+                        <p class="text-[11px] text-slate-400">เพิ่ม แก้ไข หรือลบช่องทางเงินในกระเป๋านี้</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeWalletSubManageModal()" class="w-8 h-8 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+
+            <!-- Add / Edit Form -->
+            <form id="walletSubForm" class="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/70 space-y-3">
+                <input type="hidden" id="walletSubManageWalletId" value="">
+                <input type="hidden" id="walletSubEditId" value="">
+                <div class="flex items-center justify-between">
+                    <span id="walletSubFormHeading" class="text-xs font-bold text-slate-700">เพิ่มรายการย่อยใหม่</span>
+                    <button type="button" id="walletSubCancelEditBtn" onclick="resetWalletSubForm()" class="hidden text-[11px] text-slate-400 hover:text-slate-600">ยกเลิกการแก้ไข</button>
+                </div>
+                <div>
+                    <input type="text" id="walletSubNameInput" required placeholder="เช่น เงินสด, บัญชีออมทรัพย์, กองทุน/หุ้น..." class="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-mint-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1.5">เลือกไอคอน</label>
+                    <div id="walletSubIconChoices" class="grid grid-cols-6 gap-1.5">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+                <button type="submit" id="walletSubSubmitBtn" class="w-full py-2.5 rounded-xl bg-mint-500 hover:bg-mint-600 text-white text-xs font-semibold shadow-xs transition flex items-center justify-center gap-1.5">
+                    <i class="ph-bold ph-plus"></i> เพิ่มรายการย่อย
+                </button>
+            </form>
+
+            <!-- Existing Sub-items List -->
+            <div>
+                <h4 class="text-xs font-bold text-slate-600 mb-2">รายการย่อยทั้งหมดในกระเป๋า</h4>
+                <div id="walletSubManageList" class="space-y-2">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ==================== FIREBASE & APP LOGIC ==================== -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -1115,14 +1205,31 @@
             'd2n': { pass: '0501', name: 'แม่', initial: 'ม', colorClass: 'bg-pastelPink-100 text-pastelPink-500' }
         };
 
-        const WALLETS = [
-            { id: 'wallet_dad', name: 'กระเป๋าเงินพ่อ', shortName: 'กระเป๋าพ่อ', icon: '👨', iconClass: 'ph-wallet', bg: '#E0EFFF', text: '#3B82F6', borderClass: 'border-pastelBlue-100' },
-            { id: 'wallet_mom', name: 'กระเป๋าเงินแม่', shortName: 'กระเป๋าแม่', icon: '👩', iconClass: 'ph-handbag', bg: '#FFE2EE', text: '#EC4899', borderClass: 'border-pastelPink-100' },
-            { id: 'wallet_shared', name: 'กระเป๋าเงินกองกลาง', shortName: 'กองกลาง', icon: '🏠', iconClass: 'ph-vault', bg: '#E1F7ED', text: '#10B981', borderClass: 'border-mint-100' }
+        const DEFAULT_WALLET_SUBS = [
+            { id: 'sub_cash', name: 'เงินสด', icon: 'ph-money' },
+            { id: 'sub_bank', name: 'เงินฝากธนาคาร', icon: 'ph-bank' },
+            { id: 'sub_invest', name: 'เงินลงทุน', icon: 'ph-trend-up' }
         ];
+
+        const WALLET_SUB_ICONS = [
+            'ph-money', 'ph-bank', 'ph-trend-up', 'ph-piggy-bank',
+            'ph-credit-card', 'ph-coins', 'ph-vault', 'ph-briefcase',
+            'ph-currency-circle-dollar', 'ph-chart-line-up', 'ph-wallet', 'ph-shield-check'
+        ];
+
+        const DEFAULT_WALLETS = [
+            { id: 'wallet_dad', name: 'กระเป๋าเงินพ่อ', shortName: 'กระเป๋าพ่อ', icon: '👨', iconClass: 'ph-wallet', bg: '#E0EFFF', text: '#3B82F6', borderClass: 'border-pastelBlue-100', order: 1, subs: DEFAULT_WALLET_SUBS.map(s => ({ ...s })) },
+            { id: 'wallet_mom', name: 'กระเป๋าเงินแม่', shortName: 'กระเป๋าแม่', icon: '👩', iconClass: 'ph-handbag', bg: '#FFE2EE', text: '#EC4899', borderClass: 'border-pastelPink-100', order: 2, subs: DEFAULT_WALLET_SUBS.map(s => ({ ...s })) },
+            { id: 'wallet_shared', name: 'กระเป๋าเงินกองกลาง', shortName: 'กองกลาง', icon: '🏠', iconClass: 'ph-vault', bg: '#E1F7ED', text: '#10B981', borderClass: 'border-mint-100', order: 3, subs: DEFAULT_WALLET_SUBS.map(s => ({ ...s })) }
+        ];
+
+        function cloneDefaultWallets() {
+            return DEFAULT_WALLETS.map(w => ({ ...w, subs: w.subs.map(s => ({ ...s })) }));
+        }
 
         let state = {
             recorder: null, // { username: 'n2d', name: 'พ่อ' }
+            wallets: cloneDefaultWallets(),
             members: [],
             categories: [],
             transactions: [],
@@ -1132,11 +1239,13 @@
             homeMonth: getCurrentYearMonth(),
             homeMemberFilter: 'ALL',
             homeWalletFilter: 'ALL',
+            homeWalletSubFilter: 'ALL',
             instMemberFilter: 'ALL',
             
             // Add/Edit Form State
             txType: 'expense',
             selectedWalletId: 'wallet_dad',
+            selectedWalletSubId: 'sub_cash',
             selectedMemberId: null,
             selectedSubCategory: '',
             
@@ -1154,6 +1263,9 @@
             donutChart: null,
             barChart: null
         };
+
+        // Expose state on window for inline handlers
+        window.state = state;
 
         // Pastel Avatar & Icon Presets
         const AVATAR_PRESETS = [
@@ -1246,6 +1358,7 @@
                     setupRealtimeListeners();
                 } else {
                     // Fallback in-memory mode if run outside Firebase environment
+                    state.wallets = cloneDefaultWallets();
                     state.members = [...DEFAULT_MEMBERS];
                     state.categories = [...DEFAULT_CATEGORIES];
                     finishInitialLoad();
@@ -1253,6 +1366,7 @@
             } catch (err) {
                 console.error("Bootstrap Error:", err);
                 showToast("เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล", "error");
+                if (state.wallets.length === 0) state.wallets = cloneDefaultWallets();
                 if (state.members.length === 0) state.members = [...DEFAULT_MEMBERS];
                 if (state.categories.length === 0) state.categories = [...DEFAULT_CATEGORIES];
                 finishInitialLoad();
@@ -1267,10 +1381,17 @@
             return doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
         }
 
-        // Seed default members and categories if empty
+        // Seed default wallets, members, and categories if empty
         async function ensureDefaultSeedData() {
             if (!db) return;
             try {
+                const walletSnap = await getDocs(getFamilyCol('family_wallets'));
+                if (walletSnap.empty) {
+                    for (const w of cloneDefaultWallets()) {
+                        await setDoc(getFamilyDoc('family_wallets', w.id), w);
+                    }
+                }
+
                 const memSnap = await getDocs(getFamilyCol('family_members'));
                 if (memSnap.empty) {
                     for (const m of DEFAULT_MEMBERS) {
@@ -1297,6 +1418,7 @@
                 snapshotErrorShown = true;
                 showToast("ไม่สามารถเข้าถึง Firestore ได้ กรุณาตรวจสอบ Security Rules หรือ Anonymous Auth", "error");
             }
+            if (state.wallets.length === 0) state.wallets = cloneDefaultWallets();
             if (state.members.length === 0) state.members = [...DEFAULT_MEMBERS];
             if (state.categories.length === 0) state.categories = [...DEFAULT_CATEGORIES];
             checkInitialDone();
@@ -1304,6 +1426,27 @@
 
         function setupRealtimeListeners() {
             if (!db) return;
+
+            // 0. Wallets & Sub-items Listener
+            onSnapshot(getFamilyCol('family_wallets'), (snap) => {
+                if (snap.empty) {
+                    state.wallets = cloneDefaultWallets();
+                } else {
+                    const mapById = {};
+                    snap.forEach(d => {
+                        mapById[d.id] = { id: d.id, ...d.data() };
+                    });
+                    state.wallets = DEFAULT_WALLETS.map(def => {
+                        const remote = mapById[def.id];
+                        const subs = (remote && Array.isArray(remote.subs) && remote.subs.length > 0)
+                            ? remote.subs
+                            : def.subs.map(s => ({ ...s }));
+                        return { ...def, ...(remote || {}), subs };
+                    });
+                }
+                refreshAllViews();
+                checkInitialDone();
+            }, (err) => handleSnapshotError("Wallets", err));
 
             // 1. Members Listener
             onSnapshot(getFamilyCol('family_members'), (snap) => {
@@ -1355,7 +1498,7 @@
 
         function checkInitialDone() {
             initialSnapshotsCount++;
-            if (initialSnapshotsCount >= 4) {
+            if (initialSnapshotsCount >= 5) {
                 finishInitialLoad();
             }
         }
@@ -1421,8 +1564,10 @@
             // Set Default Date & Wallet in Form
             document.getElementById('txDate').value = getTodayISO();
             state.selectedWalletId = state.recorder.username === 'd2n' ? 'wallet_mom' : 'wallet_dad';
+            state.selectedWalletSubId = getWalletSubs(state.selectedWalletId)[0]?.id || 'sub_cash';
             populateMonthFilterOptions();
             populateTransferWalletSelects();
+            renderPayInstSubOptions();
             refreshAllViews();
         }
 
@@ -1466,7 +1611,10 @@
 
             if (tabName === 'reports') renderReports();
             if (tabName === 'categories') renderCategoriesManage();
-            if (tabName === 'settings') renderSettingsMembers();
+            if (tabName === 'settings') {
+                renderSettingsWallets();
+                renderSettingsMembers();
+            }
             if (tabName === 'installments') renderInstallmentsDashboard();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
@@ -1478,11 +1626,19 @@
             renderTxWalletSelector();
             renderTxMemberSelector();
             renderTxMainCategories();
+            populateTransferWalletSelects(true);
             renderCategoriesManage();
+            renderSettingsWallets();
             renderSettingsMembers();
             populateReportMemberDropdown();
+            onReportWalletFilterChange(true);
+            renderPayInstSubOptions();
             if (!document.getElementById('tab-reports').classList.contains('hidden')) {
                 renderReports();
+            }
+            if (!document.getElementById('walletSubManageModal').classList.contains('hidden')) {
+                const activeWid = document.getElementById('walletSubManageWalletId').value;
+                if (activeWid) renderWalletSubManageList(activeWid);
             }
         }
 
@@ -1511,52 +1667,93 @@
             renderHomeDashboard();
         });
 
+        function getWalletsList() {
+            return (state.wallets && state.wallets.length > 0) ? state.wallets : DEFAULT_WALLETS;
+        }
+
         // Resolve walletId for both new and legacy transactions
         function resolveTxWalletId(tx) {
-            if (tx.walletId && WALLETS.some(w => w.id === tx.walletId)) return tx.walletId;
+            const wallets = getWalletsList();
+            if (tx.walletId && wallets.some(w => w.id === tx.walletId)) return tx.walletId;
             if (tx.memberId === 'mem_dad') return 'wallet_dad';
             if (tx.memberId === 'mem_mom') return 'wallet_mom';
             return 'wallet_shared';
         }
 
         function getWalletObj(walletId) {
-            return WALLETS.find(w => w.id === walletId) || WALLETS[2];
+            const wallets = getWalletsList();
+            return wallets.find(w => w.id === walletId) || wallets[wallets.length - 1] || DEFAULT_WALLETS[2];
         }
 
-        function txMatchesWalletFilter(tx, walletFilter) {
+        function getWalletSubs(walletId) {
+            const w = getWalletObj(walletId);
+            return (w && Array.isArray(w.subs) && w.subs.length > 0) ? w.subs : DEFAULT_WALLET_SUBS;
+        }
+
+        function getSubWalletObj(walletId, subId) {
+            const subs = getWalletSubs(walletId);
+            return subs.find(s => s.id === subId) || subs[0];
+        }
+
+        function resolveTxWalletSubId(tx, side = 'default') {
+            if (tx.type === 'transfer') {
+                const wid = side === 'from' ? (tx.fromWalletId || 'wallet_dad') : (tx.toWalletId || 'wallet_shared');
+                const rawSub = side === 'from' ? tx.fromWalletSubId : tx.toWalletSubId;
+                return getSubWalletObj(wid, rawSub).id;
+            }
+            const wid = resolveTxWalletId(tx);
+            return getSubWalletObj(wid, tx.walletSubId).id;
+        }
+
+        function txMatchesWalletFilter(tx, walletFilter, subFilter = 'ALL') {
             if (walletFilter === 'ALL') return true;
             if (tx.type === 'transfer') {
-                return tx.fromWalletId === walletFilter || tx.toWalletId === walletFilter;
+                const matchesFrom = tx.fromWalletId === walletFilter && (subFilter === 'ALL' || resolveTxWalletSubId(tx, 'from') === subFilter);
+                const matchesTo = tx.toWalletId === walletFilter && (subFilter === 'ALL' || resolveTxWalletSubId(tx, 'to') === subFilter);
+                return matchesFrom || matchesTo;
             }
-            return resolveTxWalletId(tx) === walletFilter;
+            if (resolveTxWalletId(tx) !== walletFilter) return false;
+            if (subFilter !== 'ALL' && resolveTxWalletSubId(tx) !== subFilter) return false;
+            return true;
         }
 
         function computeAllTimeWalletStats() {
             const stats = {};
-            WALLETS.forEach(w => {
-                stats[w.id] = { balance: 0, totalIn: 0, totalOut: 0 };
+            getWalletsList().forEach(w => {
+                const subBalances = {};
+                getWalletSubs(w.id).forEach(s => {
+                    subBalances[s.id] = 0;
+                });
+                stats[w.id] = { balance: 0, totalIn: 0, totalOut: 0, subs: subBalances };
             });
 
             state.transactions.forEach(tx => {
                 const amt = Number(tx.amount) || 0;
                 if (tx.type === 'transfer') {
                     if (stats[tx.fromWalletId]) {
+                        const fromSubId = resolveTxWalletSubId(tx, 'from');
                         stats[tx.fromWalletId].balance -= amt;
                         stats[tx.fromWalletId].totalOut += amt;
+                        stats[tx.fromWalletId].subs[fromSubId] = (stats[tx.fromWalletId].subs[fromSubId] || 0) - amt;
                     }
                     if (stats[tx.toWalletId]) {
+                        const toSubId = resolveTxWalletSubId(tx, 'to');
                         stats[tx.toWalletId].balance += amt;
                         stats[tx.toWalletId].totalIn += amt;
+                        stats[tx.toWalletId].subs[toSubId] = (stats[tx.toWalletId].subs[toSubId] || 0) + amt;
                     }
                 } else {
                     const wid = resolveTxWalletId(tx);
+                    const sid = resolveTxWalletSubId(tx);
                     if (stats[wid]) {
                         if (tx.type === 'income') {
                             stats[wid].balance += amt;
                             stats[wid].totalIn += amt;
+                            stats[wid].subs[sid] = (stats[wid].subs[sid] || 0) + amt;
                         } else {
                             stats[wid].balance -= amt;
                             stats[wid].totalOut += amt;
+                            stats[wid].subs[sid] = (stats[wid].subs[sid] || 0) - amt;
                         }
                     }
                 }
@@ -1565,56 +1762,107 @@
         }
 
         function renderHomeDashboard() {
+            const walletsList = getWalletsList();
+
+            // Validate active sub filter if wallet subs changed
+            if (state.homeWalletFilter !== 'ALL' && state.homeWalletSubFilter !== 'ALL') {
+                const subs = getWalletSubs(state.homeWalletFilter);
+                if (!subs.some(s => s.id === state.homeWalletSubFilter)) {
+                    state.homeWalletSubFilter = 'ALL';
+                }
+            } else if (state.homeWalletFilter === 'ALL') {
+                state.homeWalletSubFilter = 'ALL';
+            }
+
             // 0. Filter Transactions by Month first (used for wallet period stats & member breakdown)
             const monthFilteredTx = state.transactions.filter(tx => {
                 if (state.homeMonth === 'ALL') return true;
                 return tx.date && tx.date.startsWith(state.homeMonth);
             });
 
-            // 0B. Render 3 Wallet Overview Cards (Dad, Mom, Shared)
+            // 0B. Render 3 Wallet Overview Cards (Dad, Mom, Shared) with Sub-Items breakdown
             const allTimeWallets = computeAllTimeWalletStats();
-            const periodWalletIn = { wallet_dad: 0, wallet_mom: 0, wallet_shared: 0 };
-            const periodWalletOut = { wallet_dad: 0, wallet_mom: 0, wallet_shared: 0 };
+            const periodWalletIn = {};
+            const periodWalletOut = {};
+            walletsList.forEach(w => {
+                periodWalletIn[w.id] = 0;
+                periodWalletOut[w.id] = 0;
+            });
 
             monthFilteredTx.forEach(tx => {
                 const amt = Number(tx.amount) || 0;
                 if (tx.type === 'transfer') {
-                    if (periodWalletOut[tx.fromWalletId] !== undefined) periodWalletOut[tx.fromWalletId] += amt;
-                    if (periodWalletIn[tx.toWalletId] !== undefined) periodWalletIn[tx.toWalletId] += amt;
+                    if (tx.fromWalletId !== tx.toWalletId) {
+                        if (periodWalletOut[tx.fromWalletId] !== undefined) periodWalletOut[tx.fromWalletId] += amt;
+                        if (periodWalletIn[tx.toWalletId] !== undefined) periodWalletIn[tx.toWalletId] += amt;
+                    }
                 } else {
                     const wid = resolveTxWalletId(tx);
-                    if (tx.type === 'income') periodWalletIn[wid] += amt;
-                    else periodWalletOut[wid] += amt;
+                    if (tx.type === 'income') periodWalletIn[wid] = (periodWalletIn[wid] || 0) + amt;
+                    else periodWalletOut[wid] = (periodWalletOut[wid] || 0) + amt;
                 }
             });
 
             const walletCardsEl = document.getElementById('homeWalletCards');
             if (walletCardsEl) {
-                walletCardsEl.innerHTML = WALLETS.map(w => {
+                walletCardsEl.innerHTML = walletsList.map(w => {
                     const isActive = state.homeWalletFilter === w.id;
                     const bal = allTimeWallets[w.id]?.balance || 0;
                     const pIn = periodWalletIn[w.id] || 0;
                     const pOut = periodWalletOut[w.id] || 0;
+                    const subs = getWalletSubs(w.id);
+
+                    const subsHtml = subs.map(sub => {
+                        const subBal = allTimeWallets[w.id]?.subs?.[sub.id] || 0;
+                        const isSubActive = isActive && state.homeWalletSubFilter === sub.id;
+                        return `
+                            <button type="button" onclick="event.stopPropagation(); selectHomeWalletSub('${w.id}', '${sub.id}')"
+                                class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs transition ${isSubActive ? 'bg-mint-500 text-white shadow-2xs' : 'bg-slate-50/90 hover:bg-slate-100 text-slate-700'}">
+                                <span class="flex items-center gap-1.5 min-w-0 truncate">
+                                    <i class="ph-fill ${sub.icon || 'ph-wallet'} ${isSubActive ? 'text-white' : 'text-slate-400'} text-sm shrink-0"></i>
+                                    <span class="truncate font-medium">${escapeHtml(sub.name)}</span>
+                                </span>
+                                <span class="font-bold shrink-0 ml-2 ${isSubActive ? 'text-white' : (subBal < 0 ? 'text-coral-500' : 'text-slate-800')}">${formatCurrency(subBal)}</span>
+                            </button>
+                        `;
+                    }).join('');
+
                     return `
-                        <button type="button" onclick="toggleHomeWalletCard('${w.id}')" class="card-hover text-left bg-white rounded-3xl p-4 soft-shadow border-2 transition ${isActive ? 'border-mint-500 ring-2 ring-mint-100' : `${w.borderClass} hover:border-slate-200`}">
-                            <div class="flex items-center justify-between mb-2">
-                                <div class="flex items-center gap-2 min-w-0">
-                                    <span class="w-9 h-9 rounded-2xl flex items-center justify-center text-lg shrink-0" style="background-color: ${w.bg}; color: ${w.text};">
-                                        ${w.icon}
-                                    </span>
-                                    <div class="min-w-0">
-                                        <p class="font-bold text-xs sm:text-sm text-slate-800 truncate">${w.name}</p>
-                                        <p class="text-[10px] text-slate-400">ยอดคงเหลือสะสม</p>
+                        <div role="button" tabindex="0" onclick="toggleHomeWalletCard('${w.id}')" class="card-hover cursor-pointer text-left bg-white rounded-3xl p-4 soft-shadow border-2 transition flex flex-col justify-between ${isActive ? 'border-mint-500 ring-2 ring-mint-100' : `${w.borderClass} hover:border-slate-200`}">
+                            <div>
+                                <div class="flex items-center justify-between gap-2 mb-2">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <span class="w-9 h-9 rounded-2xl flex items-center justify-center text-lg shrink-0" style="background-color: ${w.bg}; color: ${w.text};">
+                                            ${w.icon}
+                                        </span>
+                                        <div class="min-w-0">
+                                            <p class="font-bold text-xs sm:text-sm text-slate-800 truncate">${escapeHtml(w.name)}</p>
+                                            <p class="text-[10px] text-slate-400">ยอดคงเหลือสะสม</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-1 shrink-0">
+                                        ${isActive ? `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-mint-100 text-mint-600">กำลังดู</span>` : ''}
+                                        <button type="button" onclick="event.stopPropagation(); openWalletSubManageModal('${w.id}')" title="จัดการรายการย่อย" class="px-2 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-semibold flex items-center gap-1 transition">
+                                            <i class="ph-bold ph-sliders-horizontal"></i> จัดการ
+                                        </button>
                                     </div>
                                 </div>
-                                ${isActive ? `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-mint-100 text-mint-600 shrink-0">กำลังดู</span>` : ''}
+                                <p class="text-xl font-bold ${bal < 0 ? 'text-coral-500' : 'text-slate-800'}">${formatCurrency(bal)}</p>
+                                <div class="flex items-center justify-between text-[10px] mt-1 pb-2 border-b border-slate-100">
+                                    <span class="text-mint-600">รับ +${formatCurrency(pIn)}</span>
+                                    <span class="text-coral-500">จ่าย -${formatCurrency(pOut)}</span>
+                                </div>
                             </div>
-                            <p class="text-lg sm:text-xl font-bold ${bal < 0 ? 'text-coral-500' : 'text-slate-800'}">${formatCurrency(bal)}</p>
-                            <div class="flex items-center justify-between text-[10px] mt-1.5 pt-1.5 border-t border-slate-50">
-                                <span class="text-mint-600">รับ +${formatCurrency(pIn)}</span>
-                                <span class="text-coral-500">จ่าย -${formatCurrency(pOut)}</span>
+                            <div class="mt-2.5 space-y-1.5">
+                                <div class="flex items-center justify-between text-[10px] text-slate-400 px-0.5">
+                                    <span>รายการย่อย (${subs.length})</span>
+                                    <button type="button" onclick="event.stopPropagation(); openWalletSubManageModal('${w.id}')" class="text-mint-600 font-semibold hover:underline">+ เพิ่ม/แก้ไข</button>
+                                </div>
+                                <div class="space-y-1">
+                                    ${subsHtml}
+                                </div>
                             </div>
-                        </button>
+                        </div>
                     `;
                 }).join('');
             }
@@ -1627,15 +1875,46 @@
                         <span>💳</span> ทุกกระเป๋า
                     </button>
                 `;
-                WALLETS.forEach(w => {
+                walletsList.forEach(w => {
                     const active = state.homeWalletFilter === w.id;
                     wpHtml += `
                         <button onclick="setHomeWalletFilter('${w.id}')" class="px-3.5 py-1.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${active ? 'bg-pastelBlue-500 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-100'}">
-                            <span>${w.icon}</span> ${w.name}
+                            <span>${w.icon}</span> ${escapeHtml(w.name)}
                         </button>
                     `;
                 });
                 walletPillsEl.innerHTML = wpHtml;
+            }
+
+            // 1A-2. Render Sub-wallet Filter Pills when a wallet is selected
+            const subPillsEl = document.getElementById('homeWalletSubPills');
+            if (subPillsEl) {
+                if (state.homeWalletFilter === 'ALL') {
+                    subPillsEl.classList.add('hidden');
+                    subPillsEl.innerHTML = '';
+                } else {
+                    const subs = getWalletSubs(state.homeWalletFilter);
+                    let spHtml = `
+                        <button onclick="setHomeWalletSubFilter('ALL')" class="px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${state.homeWalletSubFilter === 'ALL' ? 'bg-mint-500 text-white shadow-2xs' : 'bg-white text-slate-600 border border-slate-100'}">
+                            ทุกประเภทย่อย
+                        </button>
+                    `;
+                    subs.forEach(s => {
+                        const active = state.homeWalletSubFilter === s.id;
+                        spHtml += `
+                            <button onclick="setHomeWalletSubFilter('${s.id}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${active ? 'bg-mint-500 text-white shadow-2xs' : 'bg-white text-slate-600 border border-slate-100'}">
+                                <i class="ph-fill ${s.icon || 'ph-wallet'}"></i> ${escapeHtml(s.name)}
+                            </button>
+                        `;
+                    });
+                    spHtml += `
+                        <button onclick="openWalletSubManageModal('${state.homeWalletFilter}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition bg-mint-50 text-mint-600 border border-mint-200 flex items-center gap-1">
+                            <i class="ph-bold ph-pencil-simple"></i> แก้ไขรายการย่อย
+                        </button>
+                    `;
+                    subPillsEl.innerHTML = spHtml;
+                    subPillsEl.classList.remove('hidden');
+                }
             }
 
             // 1B. Render Member Filter Pills
@@ -1657,13 +1936,18 @@
 
             // Update Badge
             const activeWalletObj = state.homeWalletFilter === 'ALL' ? null : getWalletObj(state.homeWalletFilter);
+            const activeSubObj = (state.homeWalletFilter !== 'ALL' && state.homeWalletSubFilter !== 'ALL')
+                ? getSubWalletObj(state.homeWalletFilter, state.homeWalletSubFilter)
+                : null;
             const activeMemberObj = state.members.find(m => m.id === state.homeMemberFilter);
-            const walletLabel = activeWalletObj ? activeWalletObj.name : 'ทุกกระเป๋า';
+            const walletLabel = activeWalletObj
+                ? `${activeWalletObj.name}${activeSubObj ? ` (${activeSubObj.name})` : ''}`
+                : 'ทุกกระเป๋า';
             const memberLabel = activeMemberObj ? activeMemberObj.name : 'ทั้งครอบครัว';
             document.getElementById('homeFilterBadge').textContent = `${walletLabel} • ${memberLabel}`;
 
-            // 2. Filter Transactions by Wallet & Member
-            const walletFilteredMonthTx = monthFilteredTx.filter(tx => txMatchesWalletFilter(tx, state.homeWalletFilter));
+            // 2. Filter Transactions by Wallet, Sub-wallet & Member
+            const walletFilteredMonthTx = monthFilteredTx.filter(tx => txMatchesWalletFilter(tx, state.homeWalletFilter, state.homeWalletSubFilter));
             const fullyFilteredTx = walletFilteredMonthTx.filter(tx => {
                 if (state.homeMemberFilter === 'ALL') return true;
                 if (tx.type === 'transfer') return state.homeWalletFilter !== 'ALL';
@@ -1677,8 +1961,12 @@
                 const amt = Number(tx.amount) || 0;
                 if (tx.type === 'transfer') {
                     if (state.homeWalletFilter !== 'ALL') {
-                        if (tx.toWalletId === state.homeWalletFilter) totalIncome += amt;
-                        if (tx.fromWalletId === state.homeWalletFilter) totalExpense += amt;
+                        const matchTo = tx.toWalletId === state.homeWalletFilter &&
+                            (state.homeWalletSubFilter === 'ALL' || resolveTxWalletSubId(tx, 'to') === state.homeWalletSubFilter);
+                        const matchFrom = tx.fromWalletId === state.homeWalletFilter &&
+                            (state.homeWalletSubFilter === 'ALL' || resolveTxWalletSubId(tx, 'from') === state.homeWalletSubFilter);
+                        if (matchTo && !matchFrom) totalIncome += amt;
+                        if (matchFrom && !matchTo) totalExpense += amt;
                     }
                 } else {
                     if (tx.type === 'income') totalIncome += amt;
@@ -1762,11 +2050,32 @@
 
         window.setHomeWalletFilter = function(walletId) {
             state.homeWalletFilter = walletId;
+            state.homeWalletSubFilter = 'ALL';
+            renderHomeDashboard();
+        };
+
+        window.setHomeWalletSubFilter = function(subId) {
+            state.homeWalletSubFilter = subId;
+            renderHomeDashboard();
+        };
+
+        window.selectHomeWalletSub = function(walletId, subId) {
+            if (state.homeWalletFilter === walletId && state.homeWalletSubFilter === subId) {
+                state.homeWalletSubFilter = 'ALL';
+            } else {
+                state.homeWalletFilter = walletId;
+                state.homeWalletSubFilter = subId;
+            }
             renderHomeDashboard();
         };
 
         window.toggleHomeWalletCard = function(walletId) {
-            state.homeWalletFilter = (state.homeWalletFilter === walletId) ? 'ALL' : walletId;
+            if (state.homeWalletFilter === walletId && state.homeWalletSubFilter === 'ALL') {
+                state.homeWalletFilter = 'ALL';
+            } else {
+                state.homeWalletFilter = walletId;
+            }
+            state.homeWalletSubFilter = 'ALL';
             renderHomeDashboard();
         };
 
@@ -1861,6 +2170,8 @@
             if (tx.type === 'transfer') {
                 const fromW = getWalletObj(tx.fromWalletId);
                 const toW = getWalletObj(tx.toWalletId);
+                const fromSub = getSubWalletObj(fromW.id, tx.fromWalletSubId);
+                const toSub = getSubWalletObj(toW.id, tx.toWalletSubId);
                 return `
                     <div onclick="openEditTransaction('${tx.id}')" class="card-hover cursor-pointer flex items-center justify-between p-3 rounded-2xl bg-pastelBlue-50/60 hover:bg-pastelBlue-100/60 border border-pastelBlue-100 transition">
                         <div class="flex items-center gap-3 min-w-0">
@@ -1868,14 +2179,14 @@
                                 <i class="ph-bold ph-arrows-left-right"></i>
                             </div>
                             <div class="min-w-0">
-                                <p class="font-semibold text-sm text-slate-800 truncate">โอนระหว่างกระเป๋า</p>
-                                <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500 mt-0.5">
+                                <p class="font-semibold text-sm text-slate-800 truncate">โอนระหว่างกระเป๋า / บัญชีย่อย</p>
+                                <div class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-slate-500 mt-0.5">
                                     <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-medium" style="background-color: ${fromW.bg}; color: ${fromW.text};">
-                                        ${fromW.icon} ${fromW.shortName}
+                                        ${fromW.icon} ${escapeHtml(fromW.shortName)} • ${escapeHtml(fromSub.name)}
                                     </span>
                                     <span>→</span>
                                     <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-medium" style="background-color: ${toW.bg}; color: ${toW.text};">
-                                        ${toW.icon} ${toW.shortName}
+                                        ${toW.icon} ${escapeHtml(toW.shortName)} • ${escapeHtml(toSub.name)}
                                     </span>
                                     <span class="text-slate-400">• ${formatThaiDateShort(tx.date)}</span>
                                     <span class="text-slate-400">• โดย ${escapeHtml(tx.recordedBy || '-')}</span>
@@ -1893,6 +2204,7 @@
 
             const member = state.members.find(m => m.id === tx.memberId) || { name: 'ไม่ระบุ', icon: '👤', bg: '#F1F5F9', text: '#64748B' };
             const wallet = getWalletObj(resolveTxWalletId(tx));
+            const subWallet = getSubWalletObj(wallet.id, tx.walletSubId);
             const cat = state.categories.find(c => c.id === tx.mainCategoryId);
             const iconClass = cat ? cat.icon : (tx.type === 'income' ? 'ph-wallet' : 'ph-receipt');
             const isIncome = tx.type === 'income';
@@ -1910,7 +2222,7 @@
                             </div>
                             <div class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-slate-400 mt-0.5">
                                 <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-medium" style="background-color: ${wallet.bg}; color: ${wallet.text};">
-                                    ${wallet.icon} ${wallet.shortName}
+                                    ${wallet.icon} ${escapeHtml(wallet.shortName)} • ${escapeHtml(subWallet.name)}
                                 </span>
                                 <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-medium" style="background-color: ${member.bg}; color: ${member.text};">
                                     ${member.icon} ${escapeHtml(member.name)}
@@ -1932,23 +2244,59 @@
         }
 
         // --- 7. FAST TRANSACTION ENTRY & EDITING ---
-        function populateTransferWalletSelects() {
+        function populateTransferWalletSelects(preserveExisting = false) {
             const fromSel = document.getElementById('txFromWallet');
             const toSel = document.getElementById('txToWallet');
             if (!fromSel || !toSel) return;
-            const optsHtml = WALLETS.map(w => `<option value="${w.id}">${w.icon} ${w.name}</option>`).join('');
+            const prevFrom = fromSel.value;
+            const prevTo = toSel.value;
+            const wallets = getWalletsList();
+            const optsHtml = wallets.map(w => `<option value="${w.id}">${w.icon} ${escapeHtml(w.name)}</option>`).join('');
             fromSel.innerHTML = optsHtml;
             toSel.innerHTML = optsHtml;
-            fromSel.value = state.recorder?.username === 'd2n' ? 'wallet_mom' : 'wallet_dad';
-            toSel.value = 'wallet_shared';
+            if (preserveExisting && prevFrom && wallets.some(w => w.id === prevFrom)) {
+                fromSel.value = prevFrom;
+            } else {
+                fromSel.value = state.recorder?.username === 'd2n' ? 'wallet_mom' : 'wallet_dad';
+            }
+            if (preserveExisting && prevTo && wallets.some(w => w.id === prevTo)) {
+                toSel.value = prevTo;
+            } else {
+                toSel.value = 'wallet_shared';
+            }
+            populateTransferSubSelect('from', preserveExisting);
+            populateTransferSubSelect('to', preserveExisting);
         }
+
+        window.populateTransferSubSelect = function(side, preserveExisting = false) {
+            const walletSel = document.getElementById(side === 'from' ? 'txFromWallet' : 'txToWallet');
+            const subSel = document.getElementById(side === 'from' ? 'txFromWalletSub' : 'txToWalletSub');
+            if (!walletSel || !subSel) return;
+            const prevSub = subSel.value;
+            const subs = getWalletSubs(walletSel.value);
+            subSel.innerHTML = subs.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+            if (preserveExisting && prevSub && subs.some(s => s.id === prevSub)) {
+                subSel.value = prevSub;
+            }
+        };
 
         window.swapTransferWallets = function() {
             const fromSel = document.getElementById('txFromWallet');
             const toSel = document.getElementById('txToWallet');
-            const tmp = fromSel.value;
+            const fromSubSel = document.getElementById('txFromWalletSub');
+            const toSubSel = document.getElementById('txToWalletSub');
+            const tmpWallet = fromSel.value;
+            const tmpSub = fromSubSel.value;
             fromSel.value = toSel.value;
-            toSel.value = tmp;
+            toSel.value = tmpWallet;
+            populateTransferSubSelect('from');
+            populateTransferSubSelect('to');
+            if (toSubSel.value && Array.from(fromSubSel.options).some(o => o.value === toSubSel.value)) {
+                fromSubSel.value = toSubSel.value;
+            }
+            if (tmpSub && Array.from(toSubSel.options).some(o => o.value === tmpSub)) {
+                toSubSel.value = tmpSub;
+            }
         };
 
         window.setTxType = function(type) {
@@ -2000,7 +2348,8 @@
         function renderTxWalletSelector() {
             const container = document.getElementById('txWalletSelector');
             if (!container) return;
-            container.innerHTML = WALLETS.map(w => {
+            const wallets = getWalletsList();
+            container.innerHTML = wallets.map(w => {
                 const isSelected = w.id === state.selectedWalletId;
                 return `
                     <button type="button" onclick="selectTxWallet('${w.id}')" class="flex flex-col items-center p-2.5 rounded-2xl border-2 transition ${isSelected ? 'border-mint-500 bg-mint-50/50 scale-[1.02]' : 'border-slate-100 bg-slate-50 opacity-80 hover:opacity-100'}">
@@ -2008,7 +2357,25 @@
                             ${w.icon}
                             ${isSelected ? `<span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-mint-500 text-white text-[9px] flex items-center justify-center border-2 border-white"><i class="ph-bold ph-check"></i></span>` : ''}
                         </div>
-                        <span class="text-[11px] font-semibold text-center leading-tight ${isSelected ? 'text-mint-700' : 'text-slate-600'}">${w.name}</span>
+                        <span class="text-[11px] font-semibold text-center leading-tight ${isSelected ? 'text-mint-700' : 'text-slate-600'}">${escapeHtml(w.name)}</span>
+                    </button>
+                `;
+            }).join('');
+            renderTxWalletSubSelector();
+        }
+
+        function renderTxWalletSubSelector() {
+            const container = document.getElementById('txWalletSubSelector');
+            if (!container) return;
+            const subs = getWalletSubs(state.selectedWalletId);
+            if (!subs.some(s => s.id === state.selectedWalletSubId)) {
+                state.selectedWalletSubId = subs[0]?.id || 'sub_cash';
+            }
+            container.innerHTML = subs.map(s => {
+                const active = s.id === state.selectedWalletSubId;
+                return `
+                    <button type="button" onclick="selectTxWalletSub('${s.id}')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 ${active ? 'bg-mint-500 text-white shadow-2xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                        <i class="ph-fill ${s.icon || 'ph-wallet'}"></i> ${escapeHtml(s.name)}
                     </button>
                 `;
             }).join('');
@@ -2016,7 +2383,13 @@
 
         window.selectTxWallet = function(walletId) {
             state.selectedWalletId = walletId;
+            state.selectedWalletSubId = getWalletSubs(walletId)[0]?.id || 'sub_cash';
             renderTxWalletSelector();
+        };
+
+        window.selectTxWalletSub = function(subId) {
+            state.selectedWalletSubId = subId;
+            renderTxWalletSubSelector();
         };
 
         function renderTxMemberSelector() {
@@ -2151,14 +2524,18 @@
             if (state.txType === 'transfer') {
                 const fromWalletId = document.getElementById('txFromWallet').value;
                 const toWalletId = document.getElementById('txToWallet').value;
-                if (fromWalletId === toWalletId) {
-                    showToast("กรุณาเลือกกระเป๋าต้นทางและปลายทางที่ต่างกัน", "error");
+                const fromWalletSubId = document.getElementById('txFromWalletSub').value || getWalletSubs(fromWalletId)[0]?.id;
+                const toWalletSubId = document.getElementById('txToWalletSub').value || getWalletSubs(toWalletId)[0]?.id;
+                if (fromWalletId === toWalletId && fromWalletSubId === toWalletSubId) {
+                    showToast("กรุณาเลือกกระเป๋าหรือรายการย่อยต้นทางและปลายทางที่ต่างกัน", "error");
                     return;
                 }
                 payload = {
                     type: 'transfer',
                     fromWalletId,
+                    fromWalletSubId,
                     toWalletId,
+                    toWalletSubId,
                     amount: rawAmount,
                     mainCategoryName: 'โอนระหว่างกระเป๋า',
                     subCategory: '',
@@ -2174,9 +2551,13 @@
                     showToast("กรุณาเลือกหมวดหมู่", "error");
                     return;
                 }
+                const wid = state.selectedWalletId || 'wallet_shared';
+                const subObj = getSubWalletObj(wid, state.selectedWalletSubId);
                 payload = {
                     type: state.txType,
-                    walletId: state.selectedWalletId || 'wallet_shared',
+                    walletId: wid,
+                    walletSubId: subObj.id,
+                    walletSubName: subObj.name,
                     memberId: state.selectedMemberId,
                     amount: rawAmount,
                     mainCategoryId: mainCat.id,
@@ -2230,8 +2611,13 @@
                 populateTransferWalletSelects();
                 document.getElementById('txFromWallet').value = tx.fromWalletId || 'wallet_dad';
                 document.getElementById('txToWallet').value = tx.toWalletId || 'wallet_shared';
+                populateTransferSubSelect('from');
+                populateTransferSubSelect('to');
+                document.getElementById('txFromWalletSub').value = resolveTxWalletSubId(tx, 'from');
+                document.getElementById('txToWalletSub').value = resolveTxWalletSubId(tx, 'to');
             } else {
                 state.selectedWalletId = resolveTxWalletId(tx);
+                state.selectedWalletSubId = resolveTxWalletSubId(tx);
                 renderTxWalletSelector();
                 state.selectedMemberId = tx.memberId;
                 renderTxMemberSelector();
@@ -2255,6 +2641,7 @@
 
             setTxType('expense');
             state.selectedWalletId = state.recorder?.username === 'd2n' ? 'wallet_mom' : 'wallet_dad';
+            state.selectedWalletSubId = getWalletSubs(state.selectedWalletId)[0]?.id || 'sub_cash';
             renderTxWalletSelector();
             populateTransferWalletSelects();
             document.getElementById('txAmountInput').value = '0';
@@ -2581,6 +2968,187 @@
             });
         };
 
+        // --- 9B. SETTINGS & MODAL: WALLET SUB-ITEMS CRUD ---
+        function renderSettingsWallets() {
+            const container = document.getElementById('settingsWalletsList');
+            if (!container) return;
+            const wallets = getWalletsList();
+            container.innerHTML = wallets.map(w => {
+                const subs = getWalletSubs(w.id);
+                const badgesHtml = subs.map(s => `
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-700">
+                        <i class="ph-fill ${s.icon || 'ph-wallet'} text-mint-500"></i> ${escapeHtml(s.name)}
+                    </span>
+                `).join('');
+                return `
+                    <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-2.5">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-9 h-9 rounded-xl flex items-center justify-center text-lg" style="background-color: ${w.bg}; color: ${w.text};">${w.icon}</span>
+                                <div>
+                                    <p class="font-bold text-sm text-slate-800">${escapeHtml(w.name)}</p>
+                                    <p class="text-[11px] text-slate-400">${subs.length} รายการย่อย</p>
+                                </div>
+                            </div>
+                            <button type="button" onclick="openWalletSubManageModal('${w.id}')" class="px-3 py-1.5 rounded-xl bg-mint-500 hover:bg-mint-600 text-white text-xs font-semibold flex items-center gap-1 transition">
+                                <i class="ph-bold ph-pencil-simple"></i> จัดการ
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">${badgesHtml}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        let selectedWalletSubIcon = WALLET_SUB_ICONS[0];
+        function renderWalletSubIconChoices() {
+            const container = document.getElementById('walletSubIconChoices');
+            if (!container) return;
+            container.innerHTML = WALLET_SUB_ICONS.map(ic => `
+                <button type="button" onclick="selectWalletSubIcon('${ic}')" class="p-2 rounded-xl border flex items-center justify-center text-lg transition ${selectedWalletSubIcon === ic ? 'border-mint-500 bg-mint-50 text-mint-600' : 'border-slate-200 bg-white text-slate-500'}">
+                    <i class="ph-fill ${ic}"></i>
+                </button>
+            `).join('');
+        }
+        window.selectWalletSubIcon = function(ic) {
+            selectedWalletSubIcon = ic;
+            renderWalletSubIconChoices();
+        };
+
+        window.resetWalletSubForm = function() {
+            document.getElementById('walletSubEditId').value = '';
+            document.getElementById('walletSubNameInput').value = '';
+            document.getElementById('walletSubFormHeading').textContent = 'เพิ่มรายการย่อยใหม่';
+            document.getElementById('walletSubCancelEditBtn').classList.add('hidden');
+            document.getElementById('walletSubSubmitBtn').innerHTML = `<i class="ph-bold ph-plus"></i> เพิ่มรายการย่อย`;
+            selectedWalletSubIcon = WALLET_SUB_ICONS[0];
+            renderWalletSubIconChoices();
+        };
+
+        function renderWalletSubManageList(walletId) {
+            const container = document.getElementById('walletSubManageList');
+            if (!container) return;
+            const subs = getWalletSubs(walletId);
+            const allStats = computeAllTimeWalletStats();
+            const subBalances = allStats[walletId]?.subs || {};
+
+            container.innerHTML = subs.map(s => {
+                const bal = subBalances[s.id] || 0;
+                return `
+                    <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="w-9 h-9 rounded-xl bg-white border border-slate-200 text-mint-600 flex items-center justify-center text-lg shrink-0">
+                                <i class="ph-fill ${s.icon || 'ph-wallet'}"></i>
+                            </span>
+                            <div class="min-w-0">
+                                <p class="font-semibold text-sm text-slate-800 truncate">${escapeHtml(s.name)}</p>
+                                <p class="text-[11px] ${bal < 0 ? 'text-coral-500' : 'text-slate-400'}">ยอดคงเหลือ ${formatCurrency(bal)}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button type="button" onclick="startEditWalletSub('${walletId}', '${s.id}')" class="p-2 text-slate-400 hover:text-mint-600 rounded-xl"><i class="ph ph-pencil-simple text-base"></i></button>
+                            <button type="button" onclick="deleteWalletSub('${walletId}', '${s.id}')" class="p-2 text-slate-400 hover:text-coral-500 rounded-xl"><i class="ph ph-trash text-base"></i></button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.openWalletSubManageModal = function(walletId) {
+            const w = getWalletObj(walletId || 'wallet_dad');
+            document.getElementById('walletSubManageWalletId').value = w.id;
+            const iconBox = document.getElementById('walletSubModalIcon');
+            iconBox.textContent = w.icon;
+            iconBox.style.backgroundColor = w.bg;
+            iconBox.style.color = w.text;
+            document.getElementById('walletSubModalTitle').textContent = `${w.name} • รายการย่อย`;
+            resetWalletSubForm();
+            renderWalletSubManageList(w.id);
+            const modal = document.getElementById('walletSubManageModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        window.closeWalletSubManageModal = function() {
+            const modal = document.getElementById('walletSubManageModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            resetWalletSubForm();
+        };
+
+        window.startEditWalletSub = function(walletId, subId) {
+            const sub = getWalletSubs(walletId).find(s => s.id === subId);
+            if (!sub) return;
+            document.getElementById('walletSubEditId').value = sub.id;
+            document.getElementById('walletSubNameInput').value = sub.name;
+            document.getElementById('walletSubFormHeading').textContent = `แก้ไข "${sub.name}"`;
+            document.getElementById('walletSubCancelEditBtn').classList.remove('hidden');
+            document.getElementById('walletSubSubmitBtn').innerHTML = `<i class="ph-bold ph-check"></i> บันทึกการแก้ไข`;
+            selectedWalletSubIcon = sub.icon || WALLET_SUB_ICONS[0];
+            renderWalletSubIconChoices();
+            document.getElementById('walletSubNameInput').focus();
+        };
+
+        async function persistWalletSubs(walletId, newSubs) {
+            const baseWallet = getWalletObj(walletId);
+            const updatedWallet = { ...baseWallet, subs: newSubs };
+            state.wallets = getWalletsList().map(w => w.id === walletId ? updatedWallet : w);
+            refreshAllViews();
+            if (db) {
+                await setDoc(getFamilyDoc('family_wallets', walletId), updatedWallet);
+            }
+        }
+
+        document.getElementById('walletSubForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const walletId = document.getElementById('walletSubManageWalletId').value;
+            const editSubId = document.getElementById('walletSubEditId').value;
+            const name = document.getElementById('walletSubNameInput').value.trim();
+            if (!walletId || !name) return;
+
+            const currentSubs = [...getWalletSubs(walletId)];
+            let nextSubs;
+            if (editSubId) {
+                nextSubs = currentSubs.map(s => s.id === editSubId ? { ...s, name, icon: selectedWalletSubIcon } : s);
+            } else {
+                const newId = `sub_${Date.now()}`;
+                nextSubs = [...currentSubs, { id: newId, name, icon: selectedWalletSubIcon }];
+            }
+
+            try {
+                await persistWalletSubs(walletId, nextSubs);
+                showToast(editSubId ? "แก้ไขรายการย่อยในกระเป๋าแล้ว" : "เพิ่มรายการย่อยในกระเป๋าแล้ว", "success");
+                resetWalletSubForm();
+                renderWalletSubManageList(walletId);
+            } catch (err) {
+                console.error("Save wallet sub error:", err);
+                showToast("บันทึกรายการย่อยไม่สำเร็จ", "error");
+            }
+        });
+
+        window.deleteWalletSub = function(walletId, subId) {
+            const subs = getWalletSubs(walletId);
+            if (subs.length <= 1) {
+                showToast("ต้องมีรายการย่อยในกระเป๋าอย่างน้อย 1 รายการ", "error");
+                return;
+            }
+            const target = subs.find(s => s.id === subId);
+            showConfirm("ลบรายการย่อย", `ต้องการลบ "${target ? target.name : ''}" ออกจากกระเป๋านี้ใช่หรือไม่? (ประวัติเดิมจะถูกนับรวมในรายการย่อยแรกของกระเป๋า)`, async () => {
+                try {
+                    const nextSubs = subs.filter(s => s.id !== subId);
+                    await persistWalletSubs(walletId, nextSubs);
+                    showToast("ลบรายการย่อยเรียบร้อยแล้ว", "success");
+                    if (document.getElementById('walletSubEditId').value === subId) {
+                        resetWalletSubForm();
+                    }
+                    renderWalletSubManageList(walletId);
+                } catch (err) {
+                    console.error("Delete wallet sub error:", err);
+                    showToast("ลบไม่สำเร็จ", "error");
+                }
+            });
+        };
+
         // --- 10. REPORTS & CHARTS ---
         function populateReportMemberDropdown() {
             const select = document.getElementById('reportMemberFilter');
@@ -2617,15 +3185,40 @@
             renderReports();
         };
 
+        window.onReportWalletFilterChange = function(preserveSub = false) {
+            const walletSel = document.getElementById('reportWalletFilter');
+            const subSel = document.getElementById('reportWalletSubFilter');
+            if (!walletSel || !subSel) return;
+            const walletFilter = walletSel.value || 'ALL';
+            const prevSub = subSel.value || 'ALL';
+            if (walletFilter === 'ALL') {
+                subSel.innerHTML = `<option value="ALL">รายการย่อย: ทั้งหมด</option>`;
+                subSel.value = 'ALL';
+                subSel.disabled = true;
+            } else {
+                const subs = getWalletSubs(walletFilter);
+                subSel.disabled = false;
+                subSel.innerHTML = `<option value="ALL">รายการย่อย: ทั้งหมด</option>` +
+                    subs.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+                if (preserveSub && subs.some(s => s.id === prevSub)) {
+                    subSel.value = prevSub;
+                } else {
+                    subSel.value = 'ALL';
+                }
+            }
+            if (!preserveSub) renderReports();
+        };
+
         window.renderReports = function() {
             const walletFilter = document.getElementById('reportWalletFilter')?.value || 'ALL';
+            const walletSubFilter = document.getElementById('reportWalletSubFilter')?.value || 'ALL';
             const memberFilter = document.getElementById('reportMemberFilter').value || 'ALL';
             const searchQuery = (document.getElementById('reportSearchInput').value || '').trim().toLowerCase();
             const todayStr = getTodayISO();
 
             const filtered = state.transactions.filter(tx => {
-                // Wallet filter
-                if (!txMatchesWalletFilter(tx, walletFilter)) return false;
+                // Wallet & Sub-wallet filter
+                if (!txMatchesWalletFilter(tx, walletFilter, walletSubFilter)) return false;
 
                 // Member filter
                 if (memberFilter !== 'ALL') {
@@ -2638,7 +3231,10 @@
 
                 // Search filter
                 if (searchQuery) {
-                    const hay = `${tx.mainCategoryName} ${tx.subCategory} ${tx.note} ${tx.recordedBy}`.toLowerCase();
+                    const subName = tx.type === 'transfer'
+                        ? `${getSubWalletObj(tx.fromWalletId, tx.fromWalletSubId).name} ${getSubWalletObj(tx.toWalletId, tx.toWalletSubId).name}`
+                        : getSubWalletObj(resolveTxWalletId(tx), tx.walletSubId).name;
+                    const hay = `${tx.mainCategoryName} ${tx.subCategory} ${subName} ${tx.note} ${tx.recordedBy}`.toLowerCase();
                     if (!hay.includes(searchQuery)) return false;
                 }
 
@@ -2670,8 +3266,12 @@
                 const amt = Number(tx.amount) || 0;
                 if (tx.type === 'transfer') {
                     if (walletFilter !== 'ALL') {
-                        if (tx.toWalletId === walletFilter) incSum += amt;
-                        if (tx.fromWalletId === walletFilter) expSum += amt;
+                        const matchTo = tx.toWalletId === walletFilter &&
+                            (walletSubFilter === 'ALL' || resolveTxWalletSubId(tx, 'to') === walletSubFilter);
+                        const matchFrom = tx.fromWalletId === walletFilter &&
+                            (walletSubFilter === 'ALL' || resolveTxWalletSubId(tx, 'from') === walletSubFilter);
+                        if (matchTo && !matchFrom) incSum += amt;
+                        if (matchFrom && !matchTo) expSum += amt;
                     }
                 } else {
                     if (tx.type === 'income') incSum += amt;
@@ -3261,6 +3861,18 @@
         // --- PAY INSTALLMENT MODAL & ACTION ---
         let activePayInstObj = null;
 
+        window.renderPayInstSubOptions = function() {
+            const walletSel = document.getElementById('payInstWalletSelect');
+            const subSel = document.getElementById('payInstWalletSubSelect');
+            if (!walletSel || !subSel) return;
+            const prev = subSel.value;
+            const subs = getWalletSubs(walletSel.value || 'wallet_shared');
+            subSel.innerHTML = subs.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+            if (prev && subs.some(s => s.id === prev)) {
+                subSel.value = prev;
+            }
+        };
+
         window.openPayInstallmentModal = function(instId) {
             const item = state.installments.find(i => i.id === instId);
             if (!item) return;
@@ -3277,6 +3889,7 @@
             document.getElementById('payInstNewRemainingText').textContent = formatCurrency(breakdown.newRemaining);
             document.getElementById('payInstDateInput').value = getTodayISO();
             document.getElementById('payInstAutoExpenseCheck').checked = true;
+            renderPayInstSubOptions();
 
             document.getElementById('payInstallmentModal').classList.remove('hidden');
             document.getElementById('payInstallmentModal').classList.add('flex');
@@ -3308,6 +3921,8 @@
             const payDate = document.getElementById('payInstDateInput').value || getTodayISO();
             const autoRecordExpense = document.getElementById('payInstAutoExpenseCheck').checked;
             const payWalletId = document.getElementById('payInstWalletSelect')?.value || 'wallet_shared';
+            const payWalletSubId = document.getElementById('payInstWalletSubSelect')?.value || getWalletSubs(payWalletId)[0]?.id;
+            const paySubObj = getSubWalletObj(payWalletId, payWalletSubId);
 
             if (payAmount <= 0) {
                 showToast("กรุณาระบุยอดชำระที่มากกว่า 0 บาท", "error");
@@ -3349,6 +3964,8 @@
                     await addDoc(getFamilyCol('family_transactions'), {
                         type: 'expense',
                         walletId: payWalletId,
+                        walletSubId: paySubObj.id,
+                        walletSubName: paySubObj.name,
                         memberId: activePayInstObj.memberId || (state.members[0]?.id || 'mem_dad'),
                         amount: payAmount,
                         mainCategoryId: matchedCat ? matchedCat.id : 'cat_exp_util',
